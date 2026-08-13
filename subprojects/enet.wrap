@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/zpl-c/enet.git
+revision = v2.7.0
+depth = 1
+method = cmake
