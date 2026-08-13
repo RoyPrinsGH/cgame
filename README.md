@@ -1,0 +1,1 @@
+This projects uses the [meson](https://mesonbuild.com/) build system
