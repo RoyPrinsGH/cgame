@@ -1,3 +1,8 @@
-project('tutorial', 'c')
-gtkdep = dependency('gtk+-3.0')
-executable('demo', 'main.c', dependencies: gtkdep)
+project(
+    'thehighseas',
+    'c',
+    'cpp',
+    default_options: ['cpp_std=c++23'],
+)
+
+executable('thehighseas', 'main.c')
