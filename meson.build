@@ -17,12 +17,19 @@ endif
 
 bullet_project = cmake.subproject('bullet')
 message('CMake targets:\n - ' + '\n - '.join(bullet_project.target_list()))
-bullet_dep = bullet_project.dependency('BulletDynamics')
 
-deps += bullet_dep
+deps += bullet_project.dependency('BulletDynamics')
+deps += bullet_project.dependency('BulletCollision')
+deps += bullet_project.dependency('LinearMath')
 
 executable(
     'thehighseas',
     'main.c',
+    dependencies: deps,
+)
+
+executable(
+    'thehighseas-bullet',
+    'bullet.cpp',
     dependencies: deps,
 )
