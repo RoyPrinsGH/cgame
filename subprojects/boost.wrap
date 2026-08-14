@@ -1,0 +1,6 @@
+[wrap-git]
+url = https://github.com/boostorg/boost.git
+revision = b72e7d8b8895cb84c88e5cca7c98d1ab3b8fb25a
+depth = 1
+clone-recursive = true
+method = cmake

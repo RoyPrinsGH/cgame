@@ -1,9 +1,12 @@
 #include <memory>
-
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/filesystem/path.hpp>
 #include "raylib.h"
 
 int main(void)
 {
+    boost::filesystem::path assets_path = boost::dll::program_location().parent_path().append("assets");
+
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(1280, 720, "the high seas -- client");
 
@@ -15,7 +18,7 @@ int main(void)
         .projection = CAMERA_PERSPECTIVE,
     };
 
-    Model model = LoadModel("../assets/ship.glb");
+    Model model = LoadModel(assets_path.append("ship.glb").c_str());
 
     while (!WindowShouldClose())
     {
