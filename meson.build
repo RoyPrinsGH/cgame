@@ -41,3 +41,9 @@ executable(
     'bullet.cpp',
     dependencies: deps,
 )
+
+executable(
+    'thehighseas-client',
+    'client.cpp',
+    dependencies: deps,
+)
