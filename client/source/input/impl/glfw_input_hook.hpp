@@ -4,20 +4,22 @@
 
 namespace engine::input::glfw
 {
-    class glfw_key_handler
+    class glfw_input_handler
     {
     public:
-        virtual void handleGlfwInput(GLFWwindow *window, int key, int scancode, int action, int mods) {};
+        virtual void handleGlfwKeyInput(GLFWwindow *window, int key, int scancode, int action, int mods) {};
+        virtual void handleGlfwMouseInput(GLFWwindow *window, int button, int action, int mods) {};
     };
 
-    static void InstallGlfwKeyHandlerObj(glfw_key_handler *handlerObj)
+    static void InstallGlfwInputHandlerObj(glfw_input_handler *handlerObj)
     {
         auto window = glfwGetCurrentContext();
         glfwSetWindowUserPointer(window, handlerObj);
         glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode, int action, int mods)
-                           { auto *handler =
-                                 static_cast<glfw_key_handler *>(
-                                     glfwGetWindowUserPointer(window)); 
-                            handler->handleGlfwInput(window, key, scancode, action, mods); });
+                           {    auto *handler = static_cast<glfw_input_handler *>(glfwGetWindowUserPointer(window)); 
+                                handler->handleGlfwKeyInput(window, key, scancode, action, mods); });
+        glfwSetMouseButtonCallback(window, [](GLFWwindow *window, int button, int action, int mods)
+                                   {    auto *handler = static_cast<glfw_input_handler *>(glfwGetWindowUserPointer(window)); 
+                                        handler->handleGlfwMouseInput(window, button, action, mods); });
     }
 }

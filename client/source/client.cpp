@@ -5,7 +5,7 @@
 #include "renderer.hpp"
 #include "input/impl/glfw_input_hook.hpp"
 #include "input/impl/glfw_input_stream.hpp"
-#include "input/keyboard_state_tracker.hpp"
+#include "input/button_state_tracker.hpp"
 #include "world/gamestate.hpp"
 
 int main(void)
@@ -15,7 +15,7 @@ int main(void)
     // SetTargetFPS(1);
 
     engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
-    engine::input::glfw::InstallGlfwKeyHandlerObj(&glfwRawInputStream);
+    engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);
 
     world::game_state gameState;
 
@@ -24,7 +24,7 @@ int main(void)
 
     camera.setPosition({0.0f, 5.0f, 5.0f});
 
-    engine::input::keyboard_state_tracker<std::chrono::steady_clock, UINT8_MAX + 1> keyboardStateTracker;
+    engine::input::button_state_tracker<> buttonStateTracker;
 
     while (!WindowShouldClose())
     {
@@ -32,29 +32,39 @@ int main(void)
         {
             if (auto *e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
             {
-                keyboardStateTracker.setState(e->key, true);
+                buttonStateTracker.setKeyState(e->key, true);
             }
             else if (auto *e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
             {
-                keyboardStateTracker.setState(e->key, false);
+                buttonStateTracker.setKeyState(e->key, false);
+            }
+            else if (auto *e = std::get_if<engine::input::raw::mouse_button_down>(&key.value()))
+            {
+                buttonStateTracker.setMouseButtonState((uint8_t)e->button, true);
+                if (e->button == engine::input::raw::mouse_button::middle)
+                    camera.setPosition({0.0f, 5.0f, 0.0f});
+            }
+            else if (auto *e = std::get_if<engine::input::raw::mouse_button_up>(&key.value()))
+            {
+                buttonStateTracker.setMouseButtonState((uint8_t)e->button, false);
             }
         }
 
         // needs to go to event bus? or keymapper? i dont think we care
-        if (keyboardStateTracker.getState(KEY_W).first)
+        if (buttonStateTracker.getKeyState(KEY_W).first)
         {
             camera.move({0.0f, 0.0f, 0.5f});
         }
-        else if (keyboardStateTracker.getState(KEY_S).first)
+        else if (buttonStateTracker.getKeyState(KEY_S).first)
         {
             camera.move({0.0f, 0.0f, -0.5f});
         }
 
-        if (keyboardStateTracker.getState(KEY_A).first)
+        if (buttonStateTracker.getKeyState(KEY_A).first)
         {
             camera.move({0.5f, 0.0f, 0.0f});
         }
-        else if (keyboardStateTracker.getState(KEY_D).first)
+        else if (buttonStateTracker.getKeyState(KEY_D).first)
         {
             camera.move({-0.5f, 0.0f, 0.0f});
         }
