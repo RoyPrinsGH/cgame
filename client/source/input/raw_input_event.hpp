@@ -21,12 +21,12 @@ namespace engine::input::raw
 
     struct char_key_down
     {
-        char key;
+        uint8_t key;
     };
 
     struct char_key_up
     {
-        char key;
+        uint8_t key;
     };
 
     struct mouse_move

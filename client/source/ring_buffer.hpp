@@ -3,7 +3,7 @@
 #include <atomic>
 #include <optional>
 
-template <typename TItem, std::size_t Capacity>
+template <typename TItem, size_t Capacity>
 class SpscQueue
 {
 public:

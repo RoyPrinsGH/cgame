@@ -54,4 +54,7 @@ executable(
     'thehighseas-client',
     files,
     dependencies: deps,
+    override_options: [
+        'cpp_std=c++20',
+    ],
 )
