@@ -1,5 +1,5 @@
 #pragma once
-#include "glm/vec3.hpp"
+#include <glm/vec3.hpp>
 
 namespace engine
 {
@@ -10,6 +10,7 @@ namespace engine
         inline const glm::vec3 &getTarget() const { return m_target; };
         inline const void setPosition(glm::vec3 position) { m_position = position; };
         inline const void setTarget(glm::vec3 target) { m_target = target; };
+        inline const void move(glm::vec3 position) { m_position = m_position + position; };
 
     private:
         glm::vec3 m_position;

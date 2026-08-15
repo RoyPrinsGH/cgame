@@ -1,0 +1,12 @@
+#pragma once
+#include <glm/vec3.hpp>
+
+namespace world
+{
+    class ship
+    {
+    public:
+        glm::vec3 m_position;
+        glm::vec3 m_attitude;
+    };
+}

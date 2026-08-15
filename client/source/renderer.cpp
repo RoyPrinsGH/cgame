@@ -1,3 +1,6 @@
+#pragma once
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/filesystem/path.hpp>
 #include "renderer.hpp"
 
 namespace engine
@@ -11,23 +14,28 @@ namespace engine
             .fovy = 45.0f,
             .projection = CAMERA_PERSPECTIVE,
         };
+
+        m_shipModel = LoadModel(
+            boost::dll::program_location()
+                .parent_path()
+                .append("assets")
+                .append("ship.glb")
+                .c_str());
     }
 
-    void renderer::setCamera(const engine::camera &camera)
+    void renderer::draw(const world::game_state &gameState, const camera &camera)
     {
         auto cameraPosition = camera.getPosition();
         auto cameraTarget = camera.getTarget();
         m_raylibCamera.position = {cameraPosition.x, cameraPosition.y, cameraPosition.z};
         m_raylibCamera.target = {cameraTarget.x, cameraTarget.y, cameraTarget.z};
-    }
-
-    void renderer::draw() const
-    {
         BeginDrawing();
         ClearBackground(BLACK);
         DrawFPS(0, 0);
         BeginMode3D(m_raylibCamera);
-        DrawGrid(10, 0.5f);
+        DrawGrid(100, 0.5f);
+        auto glmShipPosition = gameState.m_playerShip.m_position;
+        DrawModel(m_shipModel, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
         EndMode3D();
         EndDrawing();
     }
