@@ -35,9 +35,19 @@ message('CMake targets:\n - ' + '\n - '.join(boost_project.target_list()))
 deps += boost_project.dependency('boost_dll')
 deps += boost_project.dependency('boost_filesystem')
 
+# --==[GLM]==--
+glm_project = cmake.subproject('glm')
+message('CMake targets:\n - ' + '\n - '.join(glm_project.target_list()))
+
+deps += glm_project.dependency('glm')
+
 # --==[FILES]==--
 subdir('assets')
-files = ['client.cpp']
+files = [
+    'source/client.cpp',
+    'source/renderer.cpp',
+    'source/input/impl/glfw_input_stream.cpp',
+]
 
 # --==[BUILD!]==--
 executable(
