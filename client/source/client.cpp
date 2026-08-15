@@ -33,6 +33,10 @@ int main(void)
             if (auto *e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
             {
                 buttonStateTracker.setKeyState(e->key, true);
+                if (e->key == KEY_K)
+                {
+                    gameState.m_enemyShips.push_back(world::ship{.m_position = {4.0f, 0.0f, 12.0f}});
+                }
             }
             else if (auto *e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
             {
