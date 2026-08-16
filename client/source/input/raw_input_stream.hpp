@@ -7,6 +7,6 @@ namespace engine::input
     class raw_input_stream
     {
     public:
-        virtual const std::optional<raw::input_event> readNextRawNonBlocking() {};
+        virtual const std::optional<raw::input_event> readNextRawNonBlocking() { return std::nullopt; };
     };
 }

@@ -7,6 +7,7 @@
 #include "input/impl/glfw_input_stream.hpp"
 #include "input/button_state_tracker.hpp"
 #include "world/gamestate.hpp"
+#include "events.hpp"
 
 int main(void)
 {
@@ -19,60 +20,94 @@ int main(void)
 
     world::game_state gameState;
 
+    engine::events::tick_history tickHistory;
+
     engine::camera camera;
     engine::renderer renderer;
 
     camera.setPosition({0.0f, 5.0f, 5.0f});
 
-    engine::input::button_state_tracker<> buttonStateTracker;
+    engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
+
+    int tick;
 
     while (!WindowShouldClose())
     {
+        tick++;
+
+        engine::events::tick_events_unbounded tickEvents;
+
+        // -----==[INPUT PROCESSING]==-----
         while (auto key = glfwRawInputStream.readNextRawNonBlocking())
         {
             if (auto *e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
             {
-                buttonStateTracker.setKeyState(e->key, true);
-                if (e->key == KEY_K)
-                {
-                    gameState.m_enemyShips.push_back(world::ship{.m_position = {4.0f, 0.0f, 12.0f}});
-                }
+                clientOnlyButtonStateTracker.setKeyState(e->key, true);
             }
             else if (auto *e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
             {
-                buttonStateTracker.setKeyState(e->key, false);
+                clientOnlyButtonStateTracker.setKeyState(e->key, false);
             }
             else if (auto *e = std::get_if<engine::input::raw::mouse_button_down>(&key.value()))
             {
-                buttonStateTracker.setMouseButtonState((uint8_t)e->button, true);
-                if (e->button == engine::input::raw::mouse_button::middle)
-                    camera.setPosition({0.0f, 5.0f, 0.0f});
+                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button, true);
             }
             else if (auto *e = std::get_if<engine::input::raw::mouse_button_up>(&key.value()))
             {
-                buttonStateTracker.setMouseButtonState((uint8_t)e->button, false);
+                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button, false);
+            }
+
+            tickEvents.m_inputEvents.push_back(std::move(key.value()));
+        }
+
+        // -----==[CAMERA MOVEMENT]==-----
+        glm::vec3 cameraPositionDelta{0.0f, 0.0f, 0.0f};
+
+        if (clientOnlyButtonStateTracker.getKeyState(KEY_W).first)
+            cameraPositionDelta += glm::vec3{0.0f, 0.0f, 0.5f};
+
+        if (clientOnlyButtonStateTracker.getKeyState(KEY_S).first)
+            cameraPositionDelta += glm::vec3{0.0f, 0.0f, -0.5f};
+
+        if (clientOnlyButtonStateTracker.getKeyState(KEY_A).first)
+            cameraPositionDelta += glm::vec3{0.5f, 0.0f, 0.0f};
+
+        if (clientOnlyButtonStateTracker.getKeyState(KEY_D).first)
+            cameraPositionDelta += glm::vec3{-0.5f, 0.0f, 0.0f};
+
+        tickEvents.m_cameraEvents.push_back(std::move(engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
+
+        // -----==[RUN EVENTS]==-----
+        tickHistory.registerHistory(tick, tickEvents);
+
+        for (auto &t : tickHistory.getHistoryFrom(tick))
+        {
+            printf("tick: %i", t.first);
+
+            for (auto &ce : t.second.m_cameraEvents)
+            {
+                if (auto *c = std::get_if<engine::events::camera::camera_move_event>(&ce))
+                {
+                    camera.move(c->delta);
+                }
+            }
+
+            for (auto &ie : t.second.m_inputEvents)
+            {
+                if (auto *k = std::get_if<engine::input::raw::char_key_down>(&ie))
+                {
+                    if (k->key == KEY_K)
+                        gameState.m_enemyShips.push_back(std::move(world::ship{.m_position = {4.0f, 0.0f, 12.0f}}));
+                }
+                else if (auto *k = std::get_if<engine::input::raw::mouse_button_down>(&ie))
+                {
+                    if (k->button == raw::mouse_button::middle)
+                        camera.setPosition({0.0f, 0.0f, 0.0f});
+                }
             }
         }
 
-        // needs to go to event bus? or keymapper? i dont think we care
-        if (buttonStateTracker.getKeyState(KEY_W).first)
-        {
-            camera.move({0.0f, 0.0f, 0.5f});
-        }
-        else if (buttonStateTracker.getKeyState(KEY_S).first)
-        {
-            camera.move({0.0f, 0.0f, -0.5f});
-        }
-
-        if (buttonStateTracker.getKeyState(KEY_A).first)
-        {
-            camera.move({0.5f, 0.0f, 0.0f});
-        }
-        else if (buttonStateTracker.getKeyState(KEY_D).first)
-        {
-            camera.move({-0.5f, 0.0f, 0.0f});
-        }
-
+        // -----==[RENDER]==-----
         renderer.draw(gameState, camera);
     }
 

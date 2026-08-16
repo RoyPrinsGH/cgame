@@ -1,19 +1,16 @@
-#pragma once
 #include "glfw_input_stream.hpp"
 
 namespace engine::input::glfw
 {
     const std::optional<raw::input_event> glfw_raw_input_stream::readNextRawNonBlocking()
     {
-        const auto maybeGlfwInput = m_eventQueue.pop();
-        if (!maybeGlfwInput.has_value())
+        std::variant<glfw_key_input, glfw_mouse_input> glfwInput;
+        if (!m_eventQueue.pop(glfwInput))
             return std::nullopt;
-
-        const auto glfwInput = maybeGlfwInput.value();
 
         if (auto *keyInput = std::get_if<glfw_key_input>(&glfwInput))
         {
-            if (GLFW_KEY_A <= keyInput->key <= GLFW_KEY_Z)
+            if (GLFW_KEY_A <= keyInput->key && keyInput->key <= GLFW_KEY_Z)
             {
                 switch (keyInput->action)
                 {
