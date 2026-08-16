@@ -35,7 +35,7 @@ namespace engine::events
         auto getHistoryFrom(int tick)
         {
             auto tickFilter = [tick](const auto &p)
-            { return p.first >= tick; };
+            { return p.first > tick; };
             auto begin = boost::make_filter_iterator(tickFilter, m_tickHistory.begin(), m_tickHistory.end());
             auto end = boost::make_filter_iterator(tickFilter, m_tickHistory.end(), m_tickHistory.end());
             return boost::make_iterator_range(begin, end);

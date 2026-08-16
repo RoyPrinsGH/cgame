@@ -29,11 +29,12 @@ int main(void)
 
     engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
-    int tick;
+    int clientTick;
+    int syncedTick;
 
     while (!WindowShouldClose())
     {
-        tick++;
+        clientTick++;
 
         engine::events::tick_events_unbounded tickEvents;
 
@@ -78,9 +79,9 @@ int main(void)
         tickEvents.m_cameraEvents.push_back(std::move(engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
 
         // -----==[RUN EVENTS]==-----
-        tickHistory.registerHistory(tick, tickEvents);
+        tickHistory.registerHistory(clientTick, tickEvents);
 
-        for (auto &t : tickHistory.getHistoryFrom(tick))
+        for (auto &t : tickHistory.getHistoryFrom(syncedTick))
         {
             printf("tick: %i", t.first);
 
@@ -102,9 +103,11 @@ int main(void)
                 else if (auto *k = std::get_if<engine::input::raw::mouse_button_down>(&ie))
                 {
                     if (k->button == raw::mouse_button::middle)
-                        camera.setPosition({0.0f, 0.0f, 0.0f});
+                        camera.setPosition({0.0f, 5.0f, 0.0f});
                 }
             }
+
+            syncedTick = t.first;
         }
 
         // -----==[RENDER]==-----
