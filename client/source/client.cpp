@@ -13,7 +13,7 @@ int main(void)
 {
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(1280, 720, "the high seas -- client");
-    // SetTargetFPS(1);
+    SetTargetFPS(10);
 
     engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
     engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);
@@ -76,19 +76,21 @@ int main(void)
         if (clientOnlyButtonStateTracker.getKeyState(KEY_D).first)
             cameraPositionDelta += glm::vec3{-0.5f, 0.0f, 0.0f};
 
-        tickEvents.m_cameraEvents.push_back(std::move(engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
+        if (cameraPositionDelta != glm::vec3{0.0f, 0.0f, 0.0f})
+            tickEvents.m_cameraEvents.push_back(std::move(engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
 
         // -----==[RUN EVENTS]==-----
         tickHistory.registerHistory(clientTick, tickEvents);
 
         for (auto &t : tickHistory.getHistoryFrom(syncedTick))
         {
-            printf("tick: %i", t.first);
+            printf("-- tick: %i --\n", t.first);
 
             for (auto &ce : t.second.m_cameraEvents)
             {
                 if (auto *c = std::get_if<engine::events::camera::camera_move_event>(&ce))
                 {
+                    printf("-- camera moved --\n");
                     camera.move(c->delta);
                 }
             }
@@ -98,12 +100,18 @@ int main(void)
                 if (auto *k = std::get_if<engine::input::raw::char_key_down>(&ie))
                 {
                     if (k->key == KEY_K)
+                    {
+                        printf("-- spawned enemy ship --\n");
                         gameState.m_enemyShips.push_back(std::move(world::ship{.m_position = {4.0f, 0.0f, 12.0f}}));
+                    }
                 }
                 else if (auto *k = std::get_if<engine::input::raw::mouse_button_down>(&ie))
                 {
                     if (k->button == raw::mouse_button::middle)
+                    {
+                        printf("-- reset camera position --\n");
                         camera.setPosition({0.0f, 5.0f, 0.0f});
+                    }
                 }
             }
 
