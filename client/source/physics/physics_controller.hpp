@@ -26,6 +26,7 @@ namespace physics
             m_dynamicsWorld = new btDiscreteDynamicsWorld(m_dispatcher, m_overlappingPairCache, m_solver, m_collisionConfiguration);
             m_dynamicsWorld->setGravity(btVector3(0, -10, 0));
         }
+
         ~physics_controller()
         {
             delete m_dynamicsWorld;
