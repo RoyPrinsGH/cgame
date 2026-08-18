@@ -7,6 +7,7 @@
 #include "input/impl/glfw_input_stream.hpp"
 #include "input/button_state_tracker.hpp"
 #include "world/gamestate.hpp"
+#include "physics/physics_controller.hpp"
 #include "events.hpp"
 
 int main(void)
