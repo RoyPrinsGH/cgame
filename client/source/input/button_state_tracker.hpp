@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <chrono>
 #include <utility>
-#include <limits>
 
 namespace engine::input
 {
