@@ -2,6 +2,7 @@
 #include <bullet/btBulletDynamicsCommon.h>
 #include "collision_shape_factories/ship_collision_shape_factory.hpp"
 #include "collision_shape_pool.hpp"
+#include "rigid_body_mapper.hpp"
 
 namespace physics
 {
@@ -38,6 +39,7 @@ namespace physics
 
     private:
         collision_shape_pool m_collisionShapePool;
+        rigid_body_mapper m_rigidBodyMapper;
 
         btDefaultCollisionConfiguration *m_collisionConfiguration;
         btCollisionDispatcher *m_dispatcher;
