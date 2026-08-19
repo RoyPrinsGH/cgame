@@ -32,6 +32,11 @@ namespace physics
         {
         }
 
+        std::array<btRigidBody *, UINT8_MAX + 1> getActiveRigidBodies()
+        {
+            return m_rigidBodies;
+        }
+
         [[nodiscard("dropping the rigid body handle loses the ability to despawn it")]]
         rigid_body_handle spawn(uint8_t colShapeId, spawn_data spawnData)
         {

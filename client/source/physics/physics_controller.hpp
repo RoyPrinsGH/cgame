@@ -11,6 +11,16 @@ namespace physics
         ship
     };
 
+    struct entity_snapshot
+    {
+        glm::vec3 position;
+    };
+
+    struct physics_snapshot
+    {
+        std::array<entity_snapshot, UINT8_MAX + 1> activeEntities;
+    };
+
     class physics_controller
     {
     public:
@@ -29,6 +39,37 @@ namespace physics
             m_dynamicsWorld->setGravity(btVector3(0, -10, 0));
 
             m_rigidBodyController = new rigid_body_controller(m_dynamicsWorld, m_collisionShapePool);
+        }
+
+        rigid_body_handle spawn(collision_shape collisionShape, spawn_data spawnData)
+        {
+            return m_rigidBodyController->spawn(collisionShape, spawnData);
+        }
+
+        physics_snapshot getSnapshot()
+        {
+            physics_snapshot physicsSnapshot;
+
+            auto activeBodies = m_rigidBodyController->getActiveRigidBodies();
+
+            for (int i = 0; i <= UINT8_MAX; i++)
+            {
+                auto *activeBody = activeBodies[i];
+                if (activeBody == nullptr)
+                    continue;
+
+                btTransform trans;
+                activeBody->getMotionState()->getWorldTransform(trans);
+                auto physicsEngineNativePosition = trans.getOrigin();
+
+                physicsSnapshot.activeEntities[i] = entity_snapshot{
+                    .position = {
+                        physicsEngineNativePosition.getX(),
+                        physicsEngineNativePosition.getY(),
+                        physicsEngineNativePosition.getZ()}};
+            }
+
+            return physicsSnapshot;
         }
 
         ~physics_controller()

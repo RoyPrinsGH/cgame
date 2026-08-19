@@ -34,12 +34,12 @@ namespace engine
         DrawFPS(0, 0);
         BeginMode3D(m_raylibCamera);
         DrawGrid(100, 0.5f);
-        auto glmShipPosition = gameState.m_playerShip.m_position;
+        auto glmShipPosition = gameState.m_playerShip.position;
         DrawModel(m_shipModel, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
         for (const auto &enemyShip : gameState.m_enemyShips)
         {
-            auto glmEnemyShipPosition = enemyShip.m_position;
-            DrawModel(m_shipModel, {glmEnemyShipPosition.x, glmEnemyShipPosition.y, glmEnemyShipPosition.z}, 0.05f, WHITE);
+            auto glmEnemyShipPosition = enemyShip.position;
+            DrawModel(m_shipModel, {glmEnemyShipPosition.x, glmEnemyShipPosition.y, glmEnemyShipPosition.z}, 0.05f, RED);
         }
         EndMode3D();
         EndDrawing();

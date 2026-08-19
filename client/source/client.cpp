@@ -30,6 +30,14 @@ int main(void)
 
     engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
+    auto *physicsController = new physics::physics_controller();
+
+    auto playerShipHandle = physicsController->spawn(
+        physics::collision_shape::ship,
+        physics::spawn_data{.mass = 0.5f});
+
+    std::vector<physics::rigid_body_handle> enemyShipHandles;
+
     int clientTick;
     int syncedTick;
 
@@ -103,7 +111,12 @@ int main(void)
                     if (k->key == KEY_K)
                     {
                         printf("-- spawned enemy ship --\n");
-                        gameState.m_enemyShips.push_back(std::move(world::ship{.m_position = {4.0f, 0.0f, 12.0f}}));
+
+                        auto enemyShipHandle = physicsController->spawn(
+                            physics::collision_shape::ship,
+                            physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, 12.0f}});
+
+                        enemyShipHandles.push_back(enemyShipHandle);
                     }
                 }
                 else if (auto *k = std::get_if<engine::input::raw::mouse_button_down>(&ie))
@@ -119,9 +132,21 @@ int main(void)
             syncedTick = t.first;
         }
 
+        auto physicsSnapshot = physicsController->getSnapshot();
+        gameState.m_playerShip.position = physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId].position;
+        gameState.m_enemyShips.clear();
+        for (auto enemyShipHandle : enemyShipHandles)
+        {
+            gameState.m_enemyShips.push_back(
+                world::ship{
+                    .position = physicsSnapshot.activeEntities[enemyShipHandle.rigidBodyId].position});
+        }
+
         // -----==[RENDER]==-----
         renderer.draw(gameState, camera);
     }
+
+    delete physicsController;
 
     CloseWindow();
     return 0;
