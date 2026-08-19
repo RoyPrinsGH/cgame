@@ -1,5 +1,7 @@
 #pragma once
+#include <bullet/LinearMath/btVector3.h>
 #include <bullet/btBulletDynamicsCommon.h>
+#include <glm/vec3.hpp>
 #include <array>
 #include <cstdint>
 #include "collision_shape_pool.hpp"
@@ -8,6 +10,9 @@ namespace physics
 {
     struct spawn_data
     {
+        float mass;
+        glm::vec3 inertia;
+        glm::vec3 position;
     };
 
     struct rigid_body_handle
@@ -27,6 +32,7 @@ namespace physics
         {
         }
 
+        [[nodiscard("dropping the rigid body handle loses the ability to despawn it")]]
         rigid_body_handle spawn(uint8_t colShapeId, spawn_data spawnData)
         {
             uint8_t candidateSlotIx;
@@ -35,10 +41,30 @@ namespace physics
             while (m_rigidBodies[candidateSlotIx] != nullptr)
                 candidateSlotIx++;
 
-            auto colShapePtr = m_collisionShapePoolPtr->getOrMake(colShapeId);
+            auto *colShapePtr = m_collisionShapePoolPtr->getOrMake(colShapeId);
 
-            // TODO: btRigidBody building based on spawn_data
-            m_rigidBodies[candidateSlotIx] = new btRigidBody(colShapePtr);
+            btScalar mass(spawnData.mass);
+
+            btVector3 localInertia(
+                spawnData.inertia.x,
+                spawnData.inertia.y,
+                spawnData.inertia.z);
+
+            if (mass != 0.f)
+                colShapePtr->calculateLocalInertia(mass, localInertia);
+
+            btVector3 spawnPosition(
+                spawnData.position.x,
+                spawnData.position.y,
+                spawnData.position.z);
+
+            btTransform startTransform;
+            startTransform.setIdentity();
+            startTransform.setOrigin(spawnPosition);
+
+            btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
+            btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShapePtr, localInertia);
+            m_rigidBodies[candidateSlotIx] = new btRigidBody(rbInfo);
 
             return rigid_body_handle{.rigidBodyId = candidateSlotIx};
         }

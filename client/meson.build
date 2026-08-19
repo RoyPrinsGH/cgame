@@ -18,9 +18,9 @@ endif
 bullet_project = cmake.subproject('bullet')
 message('CMake targets:\n - ' + '\n - '.join(bullet_project.target_list()))
 
-deps += bullet_project.dependency('BulletDynamics')
-deps += bullet_project.dependency('BulletCollision')
 deps += bullet_project.dependency('LinearMath')
+deps += bullet_project.dependency('BulletCollision')
+deps += bullet_project.dependency('BulletDynamics')
 
 # --==[ENET]==--
 enet_project = cmake.subproject('enet')
