@@ -43,6 +43,8 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        auto dt = GetFrameTime();
+
         clientTick++;
 
         engine::events::tick_events_unbounded tickEvents;
@@ -131,6 +133,8 @@ int main(void)
 
             syncedTick = t.first;
         }
+
+        physicsController->simulateStep(dt);
 
         auto physicsSnapshot = physicsController->getSnapshot();
         gameState.m_playerShip.position = physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId].position;

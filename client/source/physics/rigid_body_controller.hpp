@@ -40,7 +40,7 @@ namespace physics
         [[nodiscard("dropping the rigid body handle loses the ability to despawn it")]]
         rigid_body_handle spawn(uint8_t colShapeId, spawn_data spawnData)
         {
-            uint8_t candidateSlotIx;
+            uint8_t candidateSlotIx = 0;
 
             // this will hang the engine if more than 256 physics objects are allocated
             while (m_rigidBodies[candidateSlotIx] != nullptr)
@@ -69,7 +69,9 @@ namespace physics
 
             btDefaultMotionState *myMotionState = new btDefaultMotionState(startTransform);
             btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShapePtr, localInertia);
-            m_rigidBodies[candidateSlotIx] = new btRigidBody(rbInfo);
+            auto *rigidBody = new btRigidBody(rbInfo);
+            m_dynamicsWorldPtr->addRigidBody(rigidBody);
+            m_rigidBodies[candidateSlotIx] = rigidBody;
 
             return rigid_body_handle{.rigidBodyId = candidateSlotIx};
         }
@@ -88,8 +90,8 @@ namespace physics
         }
 
     private:
-        collision_shape_pool *m_collisionShapePoolPtr;
         btDynamicsWorld *m_dynamicsWorldPtr;
+        collision_shape_pool *m_collisionShapePoolPtr;
         std::array<btRigidBody *, UINT8_MAX + 1> m_rigidBodies;
     };
 }

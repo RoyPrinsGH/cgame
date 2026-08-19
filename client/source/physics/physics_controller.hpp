@@ -41,6 +41,11 @@ namespace physics
             m_rigidBodyController = new rigid_body_controller(m_dynamicsWorld, m_collisionShapePool);
         }
 
+        void simulateStep(float deltaTime)
+        {
+            m_dynamicsWorld->stepSimulation(deltaTime, 10);
+        }
+
         rigid_body_handle spawn(collision_shape collisionShape, spawn_data spawnData)
         {
             return m_rigidBodyController->spawn(collisionShape, spawnData);
