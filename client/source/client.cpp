@@ -137,13 +137,17 @@ int main(void)
         physicsController->simulateStep(dt);
 
         auto physicsSnapshot = physicsController->getSnapshot();
-        gameState.m_playerShip.position = physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId].position;
+        auto &playerShipSnapshot = physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId];
+        gameState.m_playerShip.position = playerShipSnapshot.position;
+        gameState.m_playerShip.rotation = playerShipSnapshot.rotation;
         gameState.m_enemyShips.clear();
         for (auto enemyShipHandle : enemyShipHandles)
         {
+            auto &enemyShipSnapshot = physicsSnapshot.activeEntities[enemyShipHandle.rigidBodyId];
             gameState.m_enemyShips.push_back(
                 world::ship{
-                    .position = physicsSnapshot.activeEntities[enemyShipHandle.rigidBodyId].position});
+                    .position = enemyShipSnapshot.position,
+                    .rotation = enemyShipSnapshot.rotation});
         }
 
         // -----==[RENDER]==-----

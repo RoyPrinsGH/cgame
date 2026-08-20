@@ -1,5 +1,5 @@
 #pragma once
-#include <bullet/btBulletDynamicsCommon.h>
+#include <btBulletDynamicsCommon.h>
 
 namespace physics::collision_shape_factories
 {

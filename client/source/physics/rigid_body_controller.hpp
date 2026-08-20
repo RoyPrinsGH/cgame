@@ -1,6 +1,6 @@
 #pragma once
-#include <bullet/LinearMath/btVector3.h>
-#include <bullet/btBulletDynamicsCommon.h>
+#include <LinearMath/btVector3.h>
+#include <btBulletDynamicsCommon.h>
 #include <glm/vec3.hpp>
 #include <array>
 #include <cstdint>

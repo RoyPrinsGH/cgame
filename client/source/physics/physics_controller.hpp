@@ -1,5 +1,7 @@
 #pragma once
-#include <bullet/btBulletDynamicsCommon.h>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <btBulletDynamicsCommon.h>
 #include "collision_shape_factories/ship_collision_shape_factory.hpp"
 #include "collision_shape_pool.hpp"
 #include "rigid_body_controller.hpp"
@@ -88,7 +90,7 @@ namespace physics
                     buoyancyStrength *
                     submergedFraction;
 
-                activeBody->applyCentralForce(btVector3(0.0f, buoyancyForce, 0.0f));
+                activeBody->applyCentralForce({0.0f, buoyancyForce, 0.0f});
 
                 btVector3 velocity = activeBody->getLinearVelocity();
 

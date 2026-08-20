@@ -8,6 +8,6 @@ namespace world
     {
     public:
         glm::vec3 position;
-        glm::vec4 rotation;
+        glm::vec4 rotation{0.0f, 0.0f, 0.0f, 1.0f};
     };
 }
