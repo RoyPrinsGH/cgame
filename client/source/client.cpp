@@ -14,7 +14,7 @@ int main(void)
 {
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
     InitWindow(1280, 720, "the high seas -- client");
-    SetTargetFPS(10);
+    // SetTargetFPS(10);
 
     engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
     engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);

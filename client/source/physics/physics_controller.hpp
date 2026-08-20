@@ -43,6 +43,62 @@ namespace physics
 
         void simulateStep(float deltaTime)
         {
+            auto activeBodies = m_rigidBodyController->getActiveRigidBodies();
+
+            for (int i = 0; i <= UINT8_MAX; i++)
+            {
+                auto *activeBody = activeBodies[i];
+                if (activeBody == nullptr)
+                    continue;
+
+                activeBody->activate(true);
+
+                const float waterY = 0.0f;
+                const float gravity = 10.0f;
+                const float halfHeight = 0.5f;
+
+                float y = activeBody->getWorldTransform().getOrigin().getY();
+
+                float bottom = y - halfHeight;
+                float top = y + halfHeight;
+
+                float submergedFraction = 0.0f;
+
+                if (top <= waterY)
+                {
+                    submergedFraction = 1.0f;
+                }
+                else if (bottom < waterY)
+                {
+                    submergedFraction =
+                        (waterY - bottom) / (top - bottom);
+                }
+
+                if (submergedFraction <= 0.0f)
+                    continue;
+
+                float mass = activeBody->getMass();
+
+                float buoyancyStrength = 1.3f;
+
+                float buoyancyForce =
+                    mass *
+                    gravity *
+                    buoyancyStrength *
+                    submergedFraction;
+
+                activeBody->applyCentralForce(btVector3(0.0f, buoyancyForce, 0.0f));
+
+                btVector3 velocity = activeBody->getLinearVelocity();
+
+                float waterDrag = 0.04f;
+
+                btVector3 waterDragForce =
+                    -velocity * waterDrag * submergedFraction;
+
+                activeBody->applyCentralForce(waterDragForce);
+            }
+
             m_dynamicsWorld->stepSimulation(deltaTime, 10);
         }
 
