@@ -6,6 +6,7 @@ cpp = meson.get_compiler('cpp')
 # --==[RAYLIB]==--
 raylib_project = cmake.subproject('raylib')
 message('CMake targets:\n - ' + '\n - '.join(raylib_project.target_list()))
+
 deps += raylib_project.dependency('raylib')
 
 if host_machine.system() == 'linux'

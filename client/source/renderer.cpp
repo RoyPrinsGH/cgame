@@ -1,7 +1,7 @@
-#pragma once
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/filesystem/path.hpp>
 #include "renderer.hpp"
+#include <raymath.h>
 
 namespace engine
 {
@@ -34,14 +34,22 @@ namespace engine
         DrawFPS(0, 0);
         BeginMode3D(m_raylibCamera);
         DrawGrid(100, 0.5f);
-        auto glmShipPosition = gameState.m_playerShip.position;
-        DrawModel(m_shipModel, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
+        drawShip(gameState.m_playerShip, WHITE);
         for (const auto &enemyShip : gameState.m_enemyShips)
         {
-            auto glmEnemyShipPosition = enemyShip.position;
-            DrawModel(m_shipModel, {glmEnemyShipPosition.x, glmEnemyShipPosition.y, glmEnemyShipPosition.z}, 0.05f, RED);
+            drawShip(enemyShip, RED);
         }
         EndMode3D();
         EndDrawing();
+    }
+
+    void renderer::drawShip(world::ship ship, Color tint)
+    {
+        Model instance = m_shipModel;
+        auto shipRotation = ship.rotation;
+        Quaternion raylibQuat = {shipRotation.x, shipRotation.y, shipRotation.z, shipRotation.w};
+        instance.transform = QuaternionToMatrix(raylibQuat);
+        auto glmShipPosition = ship.position;
+        DrawModel(instance, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
     }
 }

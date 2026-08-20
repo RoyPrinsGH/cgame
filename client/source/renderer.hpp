@@ -14,5 +14,6 @@ namespace engine
     private:
         Model m_shipModel;
         Camera3D m_raylibCamera;
+        void drawShip(world::ship ship, Color tint);
     };
 }

@@ -14,6 +14,7 @@ namespace physics
     struct entity_snapshot
     {
         glm::vec3 position;
+        glm::vec4 rotation;
     };
 
     struct physics_snapshot
@@ -122,12 +123,11 @@ namespace physics
                 btTransform trans;
                 activeBody->getMotionState()->getWorldTransform(trans);
                 auto physicsEngineNativePosition = trans.getOrigin();
+                auto physicsEngineNativeRotation = trans.getRotation();
 
                 physicsSnapshot.activeEntities[i] = entity_snapshot{
-                    .position = {
-                        physicsEngineNativePosition.getX(),
-                        physicsEngineNativePosition.getY(),
-                        physicsEngineNativePosition.getZ()}};
+                    .position = {physicsEngineNativePosition.getX(), physicsEngineNativePosition.getY(), physicsEngineNativePosition.getZ()},
+                    .rotation = {physicsEngineNativeRotation.getX(), physicsEngineNativeRotation.getY(), physicsEngineNativeRotation.getZ(), physicsEngineNativeRotation.getW()}};
             }
 
             return physicsSnapshot;
