@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include "collision_shape_pool.hpp"
+#include <stdexcept>
 
 namespace physics
 {
@@ -20,7 +21,6 @@ namespace physics
         uint8_t rigidBodyId;
     };
 
-    // takes no ownership of alloc/dealloc of the ptr
     class rigid_body_controller
     {
     public:
@@ -43,8 +43,11 @@ namespace physics
             uint8_t candidateSlotIx = 0;
 
             // this will hang the engine if more than 256 physics objects are allocated
-            while (m_rigidBodies[candidateSlotIx] != nullptr)
+            while (m_rigidBodies[candidateSlotIx] != nullptr && candidateSlotIx <= UINT8_MAX)
                 candidateSlotIx++;
+
+            if (candidateSlotIx > UINT8_MAX)
+                throw std::overflow_error("candidateSlotIx");
 
             auto *colShapePtr = m_collisionShapePoolPtr->getOrMake(colShapeId);
 
