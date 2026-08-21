@@ -6,7 +6,8 @@ namespace engine::input::raw
     enum special_key
     {
         escape,
-        enter
+        enter,
+        f3
     };
 
     struct special_key_up

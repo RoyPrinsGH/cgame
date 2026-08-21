@@ -22,6 +22,18 @@ namespace engine::input::glfw
                     return raw::other{};
                 };
             }
+            else if (keyInput->key == GLFW_KEY_F3)
+            {
+                switch (keyInput->action)
+                {
+                case GLFW_PRESS:
+                    return raw::special_key_down{.key = raw::special_key::f3};
+                case GLFW_RELEASE:
+                    return raw::special_key_up{.key = raw::special_key::f3};
+                default:
+                    return raw::other{};
+                };
+            }
 
             return raw::other{};
         }

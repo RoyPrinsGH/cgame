@@ -10,9 +10,6 @@
 #include "physics/physics_controller.hpp"
 #include "events.hpp"
 
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
-
 int main(void)
 {
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
@@ -41,22 +38,12 @@ int main(void)
 
     std::vector<physics::rigid_body_handle> enemyShipHandles;
 
-    float volume = 0.5f;
-
     int clientTick;
     int syncedTick;
 
     while (!WindowShouldClose())
     {
         auto dt = GetFrameTime();
-
-        GuiSlider(
-            Rectangle{50, 100, 200, 20},
-            "Volume",
-            TextFormat("%.2f", volume),
-            &volume,
-            0.0f,
-            1.0f);
 
         clientTick++;
 
@@ -140,6 +127,14 @@ int main(void)
                     {
                         printf("-- reset camera position --\n");
                         camera.setPosition({0.0f, 5.0f, 0.0f});
+                    }
+                }
+                else if (auto *k = std::get_if<engine::input::raw::special_key_down>(&ie))
+                {
+                    if (k->key == raw::special_key::f3)
+                    {
+                        printf("-- toggled debug mode --\n");
+                        renderer.toggleDebugMode();
                     }
                 }
             }

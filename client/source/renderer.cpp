@@ -2,6 +2,8 @@
 #include <boost/filesystem/path.hpp>
 #include "renderer.hpp"
 #include <raymath.h>
+#define RAYGUI_IMPLEMENTATION
+#include <raygui.h>
 
 namespace engine
 {
@@ -21,6 +23,9 @@ namespace engine
                 .append("assets")
                 .append("ship.glb")
                 .c_str());
+
+        GuiSetStyle(DEFAULT, TEXT_SIZE, 32);
+        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(WHITE));
     }
 
     void renderer::draw(const world::game_state &gameState, const camera &camera)
@@ -31,9 +36,13 @@ namespace engine
         m_raylibCamera.target = {cameraTarget.x, cameraTarget.y, cameraTarget.z};
         BeginDrawing();
         ClearBackground(BLACK);
-        DrawFPS(0, 0);
+        if (m_debugModeEnabled)
+        {
+            DrawFPS(0, 0);
+            GuiLabel({20, 20, 500, 32}, TextFormat("Enemy ships loaded: %d", gameState.m_enemyShips.size()));
+        };
         BeginMode3D(m_raylibCamera);
-        DrawGrid(100, 0.5f);
+        DrawGrid(1000, 1.0f);
         drawShip(gameState.m_playerShip, WHITE);
         for (const auto &enemyShip : gameState.m_enemyShips)
         {
