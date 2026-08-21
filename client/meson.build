@@ -55,6 +55,7 @@ executable(
     'thehighseas-client',
     files,
     dependencies: deps,
+    include_directories: ['../subprojects/raygui/src'],
     override_options: [
         'cpp_std=c++20',
     ],
