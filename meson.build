@@ -1,5 +1,5 @@
 project(
-    'thehighseas',
+    'cgame',
     'c',
     'cpp',
     meson_version: '>=1.12.0',

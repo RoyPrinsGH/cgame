@@ -52,7 +52,7 @@ files = [
 
 # --==[BUILD!]==--
 executable(
-    'thehighseas-client',
+    'cgame-client',
     files,
     dependencies: deps,
     include_directories: ['../subprojects/raygui/src'],
