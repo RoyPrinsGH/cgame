@@ -1,0 +1,5 @@
+[wrap-git]
+url = https://github.com/biojppm/rapidyaml.git
+revision = 0cd25a10e0b83e4e1c11ad74048f4817f45b9763
+depth = 1
+method = cmake
