@@ -6,4 +6,5 @@ project(
 )
 
 subdir('cgame-physics')
+subdir('cgame-assets')
 subdir('cgame-client')

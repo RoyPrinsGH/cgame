@@ -37,6 +37,9 @@ deps += glm_project.dependency('glm')
 # --==[PHYSICS]==--
 deps += cgame_physics_dep
 
+# --==[ASSETS]==--
+deps += cgame_assets_dep
+
 # --==[FILES]==--
 subdir('assets')
 files = [

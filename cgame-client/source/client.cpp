@@ -1,4 +1,7 @@
+#include <cgame/assets/asset_loader.hpp>
+#include <cgame/assets/collider_spec.hpp>
 #include <cgame/physics/physics_controller.hpp>
+
 #include <memory>
 #include <raylib.h>
 
@@ -117,7 +120,7 @@ int main(void)
 
                         auto enemyShipHandle = physicsController->spawn(
                             cgame::physics::collision_shape::ship,
-                            cgame::physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, 12.0f}});
+                            cgame::physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, (float)clientTick / 1000.0f}});
 
                         enemyShipHandles.push_back(enemyShipHandle);
                     }
