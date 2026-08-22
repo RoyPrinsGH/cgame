@@ -1,0 +1,5 @@
+name: Ship
+model: ship.glb
+collision:
+- type: sphere
+  radius: 5.0

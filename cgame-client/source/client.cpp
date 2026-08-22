@@ -1,3 +1,4 @@
+#include <cgame/assets/asset_info.hpp>
 #include <cgame/assets/asset_loader.hpp>
 #include <cgame/assets/collider_spec.hpp>
 #include <cgame/physics/physics_controller.hpp>
