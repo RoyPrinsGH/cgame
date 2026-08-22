@@ -1,7 +1,7 @@
 #pragma once
 #include <btBulletDynamicsCommon.h>
 
-namespace physics::collision_shape_factories
+namespace cgame::physics::collision_shape_factories
 {
     class ship_collision_shape_factory
     {

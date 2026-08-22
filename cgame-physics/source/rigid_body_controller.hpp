@@ -7,20 +7,8 @@
 #include "collision_shape_pool.hpp"
 #include <stdexcept>
 
-namespace physics
+namespace cgame::physics
 {
-    struct spawn_data
-    {
-        float mass;
-        glm::vec3 inertia;
-        glm::vec3 position;
-    };
-
-    struct rigid_body_handle
-    {
-        uint8_t rigidBodyId;
-    };
-
     class rigid_body_controller
     {
     public:

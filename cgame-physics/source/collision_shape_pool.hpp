@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-namespace physics
+namespace cgame::physics
 {
     class collision_shape_pool
     {

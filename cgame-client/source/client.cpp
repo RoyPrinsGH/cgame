@@ -1,5 +1,7 @@
+#include <cgame/physics/physics_controller.hpp>
 #include <memory>
 #include <raylib.h>
+
 #include "camera.hpp"
 #include "helpers.hpp"
 #include "renderer.hpp"
@@ -7,7 +9,6 @@
 #include "input/impl/glfw_input_stream.hpp"
 #include "input/button_state_tracker.hpp"
 #include "world/gamestate.hpp"
-#include "physics/physics_controller.hpp"
 #include "events.hpp"
 
 int main(void)
@@ -30,13 +31,13 @@ int main(void)
 
     engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
-    auto *physicsController = new physics::physics_controller();
+    auto *physicsController = new cgame::physics::physics_controller();
 
     auto playerShipHandle = physicsController->spawn(
-        physics::collision_shape::ship,
-        physics::spawn_data{.mass = 0.5f});
+        cgame::physics::collision_shape::ship,
+        cgame::physics::spawn_data{.mass = 0.5f});
 
-    std::vector<physics::rigid_body_handle> enemyShipHandles;
+    std::vector<cgame::physics::rigid_body_handle> enemyShipHandles;
 
     int clientTick;
     int syncedTick;
@@ -115,8 +116,8 @@ int main(void)
                         printf("-- spawned enemy ship --\n");
 
                         auto enemyShipHandle = physicsController->spawn(
-                            physics::collision_shape::ship,
-                            physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, 12.0f}});
+                            cgame::physics::collision_shape::ship,
+                            cgame::physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, 12.0f}});
 
                         enemyShipHandles.push_back(enemyShipHandle);
                     }

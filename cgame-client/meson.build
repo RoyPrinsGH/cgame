@@ -15,14 +15,6 @@ elif host_machine.system() == 'windows'
     deps += cpp.find_library('winmm')
 endif
 
-# --==[BULLET]==--
-bullet_project = cmake.subproject('bullet')
-message('CMake targets:\n - ' + '\n - '.join(bullet_project.target_list()))
-
-deps += bullet_project.dependency('LinearMath')
-deps += bullet_project.dependency('BulletCollision')
-deps += bullet_project.dependency('BulletDynamics')
-
 # --==[ENET]==--
 enet_project = cmake.subproject('enet')
 message('CMake targets:\n - ' + '\n - '.join(enet_project.target_list()))
@@ -41,6 +33,9 @@ glm_project = cmake.subproject('glm')
 message('CMake targets:\n - ' + '\n - '.join(glm_project.target_list()))
 
 deps += glm_project.dependency('glm')
+
+# --==[PHYSICS]==--
+deps += cgame_physics_dep
 
 # --==[FILES]==--
 subdir('assets')
