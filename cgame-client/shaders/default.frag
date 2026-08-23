@@ -1,11 +1,13 @@
 #version 330 core
 
-in vec3 normal;
+in vec2 texCoord;
+
+uniform sampler2D baseColorTexture;
 
 out vec4 finalColor;
 
 void main()
 {
-    vec3 n = normalize(normal);
-    finalColor = vec4(abs(n) * 0.7 + 0.3, 1.0);
+    vec2 uv = fract(texCoord);
+    finalColor = vec4(uv.x, uv.y, 0.0, 1.0);
 }

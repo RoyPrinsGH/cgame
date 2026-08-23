@@ -30,6 +30,7 @@ namespace engine
     {
         float px, py, pz;
         float nx, ny, nz;
+        float u, v;
     };
 
     struct model_instance
@@ -100,6 +101,12 @@ namespace engine
                 std::vector<std::uint32_t> indices(index_accessor.count);
                 fastgltf::copyFromAccessor<std::uint32_t>(asset, index_accessor, indices.data());
 
+                std::vector<fastgltf::math::fvec2> uvs(positions.size(), fastgltf::math::fvec2(0.0f, 0.0f));
+
+                auto uv_it = primitive.findAttribute("TEXCOORD_0");
+                if (uv_it != primitive.attributes.end())
+                    fastgltf::copyFromAccessor<fastgltf::math::fvec2>(asset, asset.accessors[uv_it->accessorIndex], uvs.data());
+
                 std::vector<vertex> vertices;
                 vertices.reserve(indices.size());
 
@@ -107,8 +114,9 @@ namespace engine
                 {
                     const auto &p = positions[index];
                     const auto &n = normals[index];
+                    const auto &uv = uvs[index];
 
-                    vertices.push_back({p.x(), p.y(), p.z(), n.x(), n.y(), n.z()});
+                    vertices.push_back({p.x(), p.y(), p.z(), n.x(), n.y(), n.z(), uv.x(), uv.y()});
                 }
 
                 gpu_primitive gpuPrimitive;
@@ -118,20 +126,38 @@ namespace engine
                 rlEnableVertexArray(gpuPrimitive.vao);
                 gpuPrimitive.vertex_vbo = rlLoadVertexBuffer(vertices.data(), static_cast<int>(vertices.size() * sizeof(vertex)), false);
                 rlEnableVertexBuffer(gpuPrimitive.vertex_vbo);
-                rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(vertex), 0);
+                rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(vertex), 0); // position
                 rlEnableVertexAttribute(0);
-                rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(vertex), 3 * sizeof(float));
+                rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(vertex), 3 * sizeof(float)); // normal
                 rlEnableVertexAttribute(2);
+                rlSetVertexAttribute(1, 2, RL_FLOAT, false, sizeof(vertex), 6 * sizeof(float)); // texture coords
+                rlEnableVertexAttribute(1);
 
                 rlEnableVertexBuffer(model.instance_vbo);
                 for (int column = 0; column < 4; column++)
                 {
-                    const unsigned location = 9 + column;
+                    const unsigned int location = 9 + column;
                     rlSetVertexAttribute(location, 4, RL_FLOAT, false, sizeof(glm::mat4), column * sizeof(glm::vec4));
                     rlEnableVertexAttribute(location);
                     rlSetVertexAttributeDivisor(location, 1);
                 }
                 rlDisableVertexArray();
+
+                if (primitive.materialIndex)
+                {
+                    const auto &material = asset.materials[*primitive.materialIndex];
+                    if (material.pbrData.baseColorTexture)
+                    {
+                        const auto texture_index = material.pbrData.baseColorTexture->textureIndex;
+                        const auto &texture = asset.textures[texture_index];
+                        const auto image_index = texture.imageIndex.value();
+                        const auto &image = asset.images[image_index];
+                        // decode image.data -> RGBA bytes
+                        // upload with rlLoadTexture(...)
+                    }
+                }
+
+                // gpuPrimitive.base_color_texture = rlLoadTexture(rgba_pixels, width, height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
 
                 model.primitives.push_back(gpuPrimitive);
             }
@@ -153,6 +179,7 @@ namespace engine
 
         m_defaultShaderViewMatrixLocation = rlGetLocationUniform(m_defaultShader, "matView");
         m_defaultShaderProjectionMatrixLocation = rlGetLocationUniform(m_defaultShader, "matProjection");
+        m_defaultShaderBaseColorTextureLocation = rlGetLocationUniform(m_defaultShader, "baseColorTexture");
 
         m_shipModel = loadModel("/home/rvne/development/cgame/cgame-client/assets/ship.glb", 256);
     }
@@ -249,9 +276,13 @@ namespace engine
 
         for (const auto &primitive : m_shipModel.primitives)
         {
+            rlActiveTextureSlot(0);
+            rlEnableTexture(primitive.base_color_texture);
+            rlSetUniformSampler(m_defaultShaderBaseColorTextureLocation, primitive.base_color_texture);
             rlEnableVertexArray(primitive.vao);
             rlDrawVertexArrayInstanced(0, primitive.vertex_count, static_cast<int>(gameState.m_enemyShips.size()) + 1);
             rlDisableVertexArray();
+            rlDisableTexture();
         }
 
         rlDisableShader();

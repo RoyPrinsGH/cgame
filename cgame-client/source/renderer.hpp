@@ -10,9 +10,10 @@ namespace engine
 {
     struct gpu_primitive
     {
-        unsigned vao;
-        unsigned vertex_vbo;
+        unsigned int vao;
+        unsigned int vertex_vbo;
         int vertex_count;
+        unsigned int base_color_texture = 0;
     };
 
     struct gpu_model
@@ -39,6 +40,7 @@ namespace engine
         unsigned int m_defaultShader;
         int m_defaultShaderViewMatrixLocation;
         int m_defaultShaderProjectionMatrixLocation;
+        int m_defaultShaderBaseColorTextureLocation;
         gpu_model m_shipModel;
     };
 }
