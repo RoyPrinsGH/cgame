@@ -10,16 +10,16 @@ namespace engine
 {
     struct gpu_primitive
     {
-        unsigned int vao;
-        unsigned int vertex_vbo;
-        int vertex_count;
-        unsigned int base_color_texture = 0;
+        unsigned int vaoId;
+        unsigned int vertexVboId;
+        unsigned int baseColorTextureId = 0;
+        int vertexCount;
     };
 
     struct gpu_model
     {
         std::vector<gpu_primitive> primitives;
-        unsigned instance_vbo;
+        unsigned int instanceVboId;
     };
 
     class renderer

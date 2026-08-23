@@ -164,7 +164,7 @@ namespace engine
         gpu_model model;
 
         std::vector<glm::mat4> initial(max_instances, glm::mat4(1.0f));
-        model.instance_vbo = rlLoadVertexBuffer(initial.data(), static_cast<int>(initial.size() * sizeof(glm::mat4)), true);
+        model.instanceVboId = rlLoadVertexBuffer(initial.data(), static_cast<int>(initial.size() * sizeof(glm::mat4)), true);
 
         for (const auto &mesh : asset.meshes)
         {
@@ -207,11 +207,11 @@ namespace engine
 
                 gpu_primitive gpuPrimitive;
 
-                gpuPrimitive.vertex_count = static_cast<int>(vertices.size());
-                gpuPrimitive.vao = rlLoadVertexArray();
-                rlEnableVertexArray(gpuPrimitive.vao);
-                gpuPrimitive.vertex_vbo = rlLoadVertexBuffer(vertices.data(), static_cast<int>(vertices.size() * sizeof(vertex)), false);
-                rlEnableVertexBuffer(gpuPrimitive.vertex_vbo);
+                gpuPrimitive.vertexCount = static_cast<int>(vertices.size());
+                gpuPrimitive.vaoId = rlLoadVertexArray();
+                rlEnableVertexArray(gpuPrimitive.vaoId);
+                gpuPrimitive.vertexVboId = rlLoadVertexBuffer(vertices.data(), static_cast<int>(vertices.size() * sizeof(vertex)), false);
+                rlEnableVertexBuffer(gpuPrimitive.vertexVboId);
                 rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(vertex), 0); // position
                 rlEnableVertexAttribute(0);
                 rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(vertex), 3 * sizeof(float)); // normal
@@ -219,7 +219,7 @@ namespace engine
                 rlSetVertexAttribute(1, 2, RL_FLOAT, false, sizeof(vertex), 6 * sizeof(float)); // texture coords
                 rlEnableVertexAttribute(1);
 
-                rlEnableVertexBuffer(model.instance_vbo);
+                rlEnableVertexBuffer(model.instanceVboId);
                 for (int column = 0; column < 4; column++)
                 {
                     const unsigned int location = 9 + column;
@@ -234,10 +234,10 @@ namespace engine
                     const auto &material = asset.materials[*primitive.materialIndex];
                     if (material.pbrData.baseColorTexture)
                     {
-                        const auto texture_index = material.pbrData.baseColorTexture->textureIndex;
-                        const auto &gltf_texture = asset.textures[texture_index];
-                        if (gltf_texture.imageIndex)
-                            gpuPrimitive.base_color_texture = textures[*gltf_texture.imageIndex];
+                        const auto textureIndex = material.pbrData.baseColorTexture->textureIndex;
+                        const auto &gltfTexture = asset.textures[textureIndex];
+                        if (gltfTexture.imageIndex)
+                            gpuPrimitive.baseColorTextureId = textures[*gltfTexture.imageIndex];
                     }
                 }
 
@@ -318,10 +318,10 @@ namespace engine
             static_cast<double>(height);
 
         Matrix projection = MatrixPerspective(
-            camera.fov_y * DEG2RAD,
+            camera.fovY * DEG2RAD,
             aspectRatio,
-            camera.near_plane,
-            camera.far_plane);
+            camera.nearPlane,
+            camera.farPlane);
 
         Matrix view = MatrixLookAt(
             glmVecToRayMathVec(camera.position),
@@ -345,7 +345,7 @@ namespace engine
             matrices.push_back(makeTransform(getModelInstanceDataFromShip(ship)));
 
         rlUpdateVertexBuffer(
-            m_shipModel.instance_vbo,
+            m_shipModel.instanceVboId,
             matrices.data(),
             static_cast<int>(
                 matrices.size() * sizeof(glm::mat4)),
@@ -361,10 +361,10 @@ namespace engine
             rlActiveTextureSlot(0);
             int texture_slot = 0;
             rlActiveTextureSlot(texture_slot);
-            rlEnableTexture(primitive.base_color_texture);
+            rlEnableTexture(primitive.baseColorTextureId);
             rlSetUniform(m_defaultShaderBaseColorTextureLocation, &texture_slot, RL_SHADER_UNIFORM_INT, 1);
-            rlEnableVertexArray(primitive.vao);
-            rlDrawVertexArrayInstanced(0, primitive.vertex_count, static_cast<int>(gameState.m_enemyShips.size()) + 1);
+            rlEnableVertexArray(primitive.vaoId);
+            rlDrawVertexArrayInstanced(0, primitive.vertexCount, static_cast<int>(gameState.m_enemyShips.size()) + 1);
             rlDisableVertexArray();
             rlDisableTexture();
         }
