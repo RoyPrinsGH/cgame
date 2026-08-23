@@ -130,7 +130,7 @@ namespace cgame::physics
 
             physicsSnapshot.activeEntities[i] = entity_snapshot{
                 .position = {physicsEngineNativePosition.getX(), physicsEngineNativePosition.getY(), physicsEngineNativePosition.getZ()},
-                .rotation = {physicsEngineNativeRotation.getX(), physicsEngineNativeRotation.getY(), physicsEngineNativeRotation.getZ(), physicsEngineNativeRotation.getW()}};
+                .rotation = {physicsEngineNativeRotation.getW(), physicsEngineNativeRotation.getX(), physicsEngineNativeRotation.getY(), physicsEngineNativeRotation.getZ()}};
         }
 
         return physicsSnapshot;
