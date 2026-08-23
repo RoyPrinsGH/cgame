@@ -19,6 +19,8 @@
 
 #include <glm/gtc/quaternion.hpp>
 
+#include <stb_image.h>
+
 #include "renderer.hpp"
 
 // #define RAYGUI_IMPLEMENTATION
@@ -56,6 +58,73 @@ namespace engine
         return Vector3{glmVec.x, glmVec.y, glmVec.z};
     };
 
+    unsigned int loadTexture(
+        const fastgltf::Asset &asset,
+        const fastgltf::Image &image)
+    {
+        int width = 0;
+        int height = 0;
+        int channels = 0;
+
+        unsigned char *pixels = nullptr;
+
+        std::visit(
+            fastgltf::visitor{
+                [](auto &) {},
+
+                [&](const fastgltf::sources::Array &source)
+                {
+                    pixels = stbi_load_from_memory(
+                        reinterpret_cast<const stbi_uc *>(source.bytes.data()),
+                        static_cast<int>(source.bytes.size()),
+                        &width,
+                        &height,
+                        &channels,
+                        4);
+                },
+
+                [&](const fastgltf::sources::BufferView &source)
+                {
+                    const auto &view =
+                        asset.bufferViews[source.bufferViewIndex];
+
+                    const auto &buffer =
+                        asset.buffers[view.bufferIndex];
+
+                    std::visit(
+                        fastgltf::visitor{
+                            [](auto &) {},
+
+                            [&](const fastgltf::sources::Array &bytes)
+                            {
+                                pixels = stbi_load_from_memory(
+                                    reinterpret_cast<const stbi_uc *>(
+                                        bytes.bytes.data() + view.byteOffset),
+                                    static_cast<int>(view.byteLength),
+                                    &width,
+                                    &height,
+                                    &channels,
+                                    4);
+                            }},
+                        buffer.data);
+                }},
+            image.data);
+
+        if (!pixels)
+            throw std::runtime_error(stbi_failure_reason());
+
+        const unsigned texture = rlLoadTexture(
+            pixels,
+            width,
+            height,
+            RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+            1);
+
+        stbi_image_free(pixels);
+
+        return texture;
+    }
+
     gpu_model loadModel(const std::filesystem::path &path, int max_instances)
     {
         fastgltf::Parser parser;
@@ -65,12 +134,29 @@ namespace engine
         if (!file)
             throw std::runtime_error("could not open glb");
 
-        auto loaded = parser.loadGltf(file.get(), path.parent_path(), fastgltf::Options::LoadExternalBuffers | fastgltf::Options::GenerateMeshIndices);
+        auto loaded = parser.loadGltf(
+            file.get(),
+            path.parent_path(),
+            fastgltf::Options::LoadExternalBuffers | fastgltf::Options::GenerateMeshIndices | fastgltf::Options::LoadExternalImages);
 
         if (loaded.error() != fastgltf::Error::None)
             throw std::runtime_error("could not parse glb");
 
         fastgltf::Asset asset = std::move(loaded.get());
+
+        std::cout
+            << "images: " << asset.images.size()
+            << " textures: " << asset.textures.size()
+            << " materials: " << asset.materials.size()
+            << '\n';
+
+        std::vector<unsigned int> textures;
+        textures.reserve(asset.images.size());
+
+        for (const auto &image : asset.images)
+        {
+            textures.push_back(loadTexture(asset, image));
+        }
 
         if (asset.meshes.empty())
             throw std::runtime_error("glb contains no meshes");
@@ -149,15 +235,11 @@ namespace engine
                     if (material.pbrData.baseColorTexture)
                     {
                         const auto texture_index = material.pbrData.baseColorTexture->textureIndex;
-                        const auto &texture = asset.textures[texture_index];
-                        const auto image_index = texture.imageIndex.value();
-                        const auto &image = asset.images[image_index];
-                        // decode image.data -> RGBA bytes
-                        // upload with rlLoadTexture(...)
+                        const auto &gltf_texture = asset.textures[texture_index];
+                        if (gltf_texture.imageIndex)
+                            gpuPrimitive.base_color_texture = textures[*gltf_texture.imageIndex];
                     }
                 }
-
-                // gpuPrimitive.base_color_texture = rlLoadTexture(rgba_pixels, width, height, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
 
                 model.primitives.push_back(gpuPrimitive);
             }
@@ -277,8 +359,10 @@ namespace engine
         for (const auto &primitive : m_shipModel.primitives)
         {
             rlActiveTextureSlot(0);
+            int texture_slot = 0;
+            rlActiveTextureSlot(texture_slot);
             rlEnableTexture(primitive.base_color_texture);
-            rlSetUniformSampler(m_defaultShaderBaseColorTextureLocation, primitive.base_color_texture);
+            rlSetUniform(m_defaultShaderBaseColorTextureLocation, &texture_slot, RL_SHADER_UNIFORM_INT, 1);
             rlEnableVertexArray(primitive.vao);
             rlDrawVertexArrayInstanced(0, primitive.vertex_count, static_cast<int>(gameState.m_enemyShips.size()) + 1);
             rlDisableVertexArray();

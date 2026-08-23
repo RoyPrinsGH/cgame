@@ -50,6 +50,7 @@ deps += cgame_assets_dep
 subdir('assets')
 files = [
     'source/rlgl_impl.cpp',
+    'source/stb_image_impl.cpp',
     'source/client.cpp',
     'source/renderer.cpp',
     'source/input/impl/glfw_input_stream.cpp',
@@ -60,7 +61,7 @@ executable(
     'cgame-client',
     files,
     dependencies: deps,
-    include_directories: ['../subprojects/raygui/src'],
+    include_directories: ['../subprojects/raygui/src', '../subprojects/stb'],
     override_options: [
         'cpp_std=c++20',
     ],

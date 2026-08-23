@@ -8,6 +8,5 @@ out vec4 finalColor;
 
 void main()
 {
-    vec2 uv = fract(texCoord);
-    finalColor = vec4(uv.x, uv.y, 0.0, 1.0);
+    finalColor = texture(baseColorTexture, texCoord);
 }
