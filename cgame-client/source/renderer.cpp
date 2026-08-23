@@ -1,64 +1,269 @@
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/filesystem/path.hpp>
-#include "renderer.hpp"
+
+#define RAYMATH_STATIC_INLINE
 #include <raymath.h>
-#define RAYGUI_IMPLEMENTATION
-#include <raygui.h>
+
+#include <fastgltf/core.hpp>
+#include <fastgltf/tools.hpp>
+
+#include <rlgl.h>
+
+#include <iostream>
+
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include <glm/gtc/quaternion.hpp>
+
+#include "renderer.hpp"
+
+// #define RAYGUI_IMPLEMENTATION
+// #include <raygui.h>
 
 namespace engine
 {
+    struct vertex
+    {
+        float px, py, pz;
+        float nx, ny, nz;
+    };
+
+    struct model_instance
+    {
+        glm::vec3 position;
+        glm::quat rotation;
+    };
+
+    static std::string readTextFile(const std::filesystem::path &path)
+    {
+        std::ifstream file(path);
+
+        if (!file)
+            throw std::runtime_error("could not open " + path.string());
+
+        return std::string(
+            std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>());
+    }
+
+    static Vector3 glmVecToRayMathVec(glm::vec3 glmVec)
+    {
+        return Vector3{glmVec.x, glmVec.y, glmVec.z};
+    };
+
+    gpu_model loadModel(const std::filesystem::path &path, int max_instances)
+    {
+        fastgltf::Parser parser;
+
+        auto file = fastgltf::MappedGltfFile::FromPath(path);
+
+        if (!file)
+            throw std::runtime_error("could not open glb");
+
+        auto loaded = parser.loadGltf(file.get(), path.parent_path(), fastgltf::Options::LoadExternalBuffers | fastgltf::Options::GenerateMeshIndices);
+
+        if (loaded.error() != fastgltf::Error::None)
+            throw std::runtime_error("could not parse glb");
+
+        fastgltf::Asset asset = std::move(loaded.get());
+
+        if (asset.meshes.empty())
+            throw std::runtime_error("glb contains no meshes");
+
+        gpu_model model;
+
+        std::vector<glm::mat4> initial(max_instances, glm::mat4(1.0f));
+        model.instance_vbo = rlLoadVertexBuffer(initial.data(), static_cast<int>(initial.size() * sizeof(glm::mat4)), true);
+
+        for (const auto &mesh : asset.meshes)
+        {
+            for (const auto &primitive : mesh.primitives)
+            {
+                auto pos_it = primitive.findAttribute("POSITION");
+                if (pos_it == primitive.attributes.end())
+                    throw std::runtime_error("mesh has no POSITION");
+
+                const auto &pos_accessor = asset.accessors[pos_it->accessorIndex];
+                std::vector<fastgltf::math::fvec3> positions(pos_accessor.count);
+                fastgltf::copyFromAccessor<fastgltf::math::fvec3>(asset, pos_accessor, positions.data());
+
+                std::vector<fastgltf::math::fvec3> normals(positions.size(), fastgltf::math::fvec3(0.0f, 1.0f, 0.0f));
+                auto normal_it = primitive.findAttribute("NORMAL");
+                if (normal_it != primitive.attributes.end())
+                    fastgltf::copyFromAccessor<fastgltf::math::fvec3>(asset, asset.accessors[normal_it->accessorIndex], normals.data());
+
+                const auto &index_accessor = asset.accessors[primitive.indicesAccessor.value()];
+                std::vector<std::uint32_t> indices(index_accessor.count);
+                fastgltf::copyFromAccessor<std::uint32_t>(asset, index_accessor, indices.data());
+
+                std::vector<vertex> vertices;
+                vertices.reserve(indices.size());
+
+                for (const auto index : indices)
+                {
+                    const auto &p = positions[index];
+                    const auto &n = normals[index];
+
+                    vertices.push_back({p.x(), p.y(), p.z(), n.x(), n.y(), n.z()});
+                }
+
+                gpu_primitive gpuPrimitive;
+
+                gpuPrimitive.vertex_count = static_cast<int>(vertices.size());
+                gpuPrimitive.vao = rlLoadVertexArray();
+                rlEnableVertexArray(gpuPrimitive.vao);
+                gpuPrimitive.vertex_vbo = rlLoadVertexBuffer(vertices.data(), static_cast<int>(vertices.size() * sizeof(vertex)), false);
+                rlEnableVertexBuffer(gpuPrimitive.vertex_vbo);
+                rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(vertex), 0);
+                rlEnableVertexAttribute(0);
+                rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(vertex), 3 * sizeof(float));
+                rlEnableVertexAttribute(2);
+
+                rlEnableVertexBuffer(model.instance_vbo);
+                for (int column = 0; column < 4; column++)
+                {
+                    const unsigned location = 9 + column;
+                    rlSetVertexAttribute(location, 4, RL_FLOAT, false, sizeof(glm::mat4), column * sizeof(glm::vec4));
+                    rlEnableVertexAttribute(location);
+                    rlSetVertexAttributeDivisor(location, 1);
+                }
+                rlDisableVertexArray();
+
+                model.primitives.push_back(gpuPrimitive);
+            }
+        }
+
+        std::cout << "vao supported: " << rlGetVersion() << '\n';
+
+        return model;
+    }
+
     renderer::renderer()
     {
-        m_raylibCamera = Camera3D{
-            .position = {0.0f, 0.0f, 0.0f},
-            .target = {0.0f, 0.0f, 0.0f},
-            .up = {0.0f, 1.0f, 0.0f},
-            .fovy = 45.0f,
-            .projection = CAMERA_PERSPECTIVE,
-        };
+        const std::string vertexShaderCode = readTextFile("/home/rvne/development/cgame/cgame-client/shaders/default.vert");
+        const std::string fragmentShaderCode = readTextFile("/home/rvne/development/cgame/cgame-client/shaders/default.frag");
 
-        m_shipModel = LoadModel(
-            boost::dll::program_location()
-                .parent_path()
-                .append("assets")
-                .append("ship.glb")
-                .c_str());
+        m_defaultShader = rlLoadShaderProgram(vertexShaderCode.c_str(), fragmentShaderCode.c_str());
 
-        GuiSetStyle(DEFAULT, TEXT_SIZE, 32);
-        GuiSetStyle(LABEL, TEXT_COLOR_NORMAL, ColorToInt(WHITE));
+        std::cout << m_defaultShader;
+
+        m_defaultShaderViewMatrixLocation = rlGetLocationUniform(m_defaultShader, "matView");
+        m_defaultShaderProjectionMatrixLocation = rlGetLocationUniform(m_defaultShader, "matProjection");
+
+        m_shipModel = loadModel("/home/rvne/development/cgame/cgame-client/assets/ship.glb", 256);
     }
 
-    void renderer::draw(const world::game_state &gameState, const camera &camera)
+    void drawGrid(int slices, float spacing)
     {
-        auto cameraPosition = camera.getPosition();
-        auto cameraTarget = camera.getTarget();
-        m_raylibCamera.position = {cameraPosition.x, cameraPosition.y, cameraPosition.z};
-        m_raylibCamera.target = {cameraTarget.x, cameraTarget.y, cameraTarget.z};
-        BeginDrawing();
-        ClearBackground(BLACK);
-        if (m_debugModeEnabled)
+        const int half = slices / 2;
+
+        rlBegin(RL_LINES);
+
+        for (int i = -half; i <= half; ++i)
         {
-            DrawFPS(0, 0);
-            GuiLabel({20, 20, 500, 32}, TextFormat("Enemy ships loaded: %d", gameState.m_enemyShips.size()));
-        };
-        BeginMode3D(m_raylibCamera);
-        DrawGrid(1000, 1.0f);
-        drawShip(gameState.m_playerShip, WHITE);
-        for (const auto &enemyShip : gameState.m_enemyShips)
-        {
-            drawShip(enemyShip, RED);
+            rlColor3f(0.5f, 0.5f, 0.5f);
+
+            rlVertex3f(i * spacing, 0.0f, -half * spacing);
+            rlVertex3f(i * spacing, 0.0f, half * spacing);
+
+            rlVertex3f(-half * spacing, 0.0f, i * spacing);
+            rlVertex3f(half * spacing, 0.0f, i * spacing);
         }
-        EndMode3D();
-        EndDrawing();
+
+        rlEnd();
     }
 
-    void renderer::drawShip(world::ship ship, Color tint)
+    glm::mat4 makeTransform(const model_instance &instance)
     {
-        Model instance = m_shipModel;
-        auto shipRotation = ship.rotation;
-        Quaternion raylibQuat = {shipRotation.x, shipRotation.y, shipRotation.z, shipRotation.w};
-        instance.transform = QuaternionToMatrix(raylibQuat);
-        auto glmShipPosition = ship.position;
-        DrawModel(instance, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
+        return glm::translate(glm::mat4(1.0f), instance.position) *
+               glm::mat4_cast(instance.rotation);
+    }
+
+    model_instance getModelInstanceDataFromShip(const world::ship &ship)
+    {
+        return model_instance{.position = ship.position, .rotation = ship.rotation};
+    }
+
+    void renderer::draw(
+        GLFWwindow *window,
+        const world::game_state &gameState,
+        const camera &camera) const
+    {
+        int width;
+        int height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        rlViewport(0, 0, width, height);
+        rlClearColor(20, 20, 20, 255);
+        rlClearScreenBuffers();
+
+        const double aspectRatio =
+            static_cast<double>(width) /
+            static_cast<double>(height);
+
+        Matrix projection = MatrixPerspective(
+            camera.fov_y * DEG2RAD,
+            aspectRatio,
+            camera.near_plane,
+            camera.far_plane);
+
+        Matrix view = MatrixLookAt(
+            glmVecToRayMathVec(camera.position),
+            glmVecToRayMathVec(camera.target),
+            glmVecToRayMathVec(camera.up));
+
+        rlSetMatrixProjection(projection);
+        rlSetMatrixModelview(view);
+        rlEnableDepthTest();
+
+        drawGrid(1000, 1.0f);
+
+        rlDrawRenderBatchActive();
+
+        std::vector<glm::mat4> matrices;
+        matrices.reserve(gameState.m_enemyShips.size() + 1);
+
+        matrices.push_back(makeTransform(getModelInstanceDataFromShip(gameState.m_playerShip)));
+
+        for (const auto &ship : gameState.m_enemyShips)
+            matrices.push_back(makeTransform(getModelInstanceDataFromShip(ship)));
+
+        rlUpdateVertexBuffer(
+            m_shipModel.instance_vbo,
+            matrices.data(),
+            static_cast<int>(
+                matrices.size() * sizeof(glm::mat4)),
+            0);
+
+        rlEnableShader(m_defaultShader);
+
+        rlSetUniformMatrix(m_defaultShaderViewMatrixLocation, view);
+        rlSetUniformMatrix(m_defaultShaderProjectionMatrixLocation, projection);
+
+        for (const auto &primitive : m_shipModel.primitives)
+        {
+            rlEnableVertexArray(primitive.vao);
+            rlDrawVertexArrayInstanced(0, primitive.vertex_count, static_cast<int>(gameState.m_enemyShips.size()) + 1);
+            rlDisableVertexArray();
+        }
+
+        rlDisableShader();
+
+        rlDrawRenderBatchActive();
+        glfwSwapBuffers(window);
+    }
+
+    void renderer::drawShip(world::ship ship)
+    {
+        // Model instance = m_shipModel;
+        // auto shipRotation = ship.rotation;
+        // Quaternion raylibQuat = {shipRotation.x, shipRotation.y, shipRotation.z, shipRotation.w};
+        // instance.transform = QuaternionToMatrix(raylibQuat);
+        // auto glmShipPosition = ship.position;
+        // DrawModel(instance, {glmShipPosition.x, glmShipPosition.y, glmShipPosition.z}, 0.05f, WHITE);
     }
 }

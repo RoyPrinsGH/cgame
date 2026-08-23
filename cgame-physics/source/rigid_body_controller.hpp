@@ -83,6 +83,6 @@ namespace cgame::physics
     private:
         btDynamicsWorld *m_dynamicsWorldPtr;
         collision_shape_pool *m_collisionShapePoolPtr;
-        std::array<btRigidBody *, UINT8_MAX + 1> m_rigidBodies;
+        std::array<btRigidBody *, UINT8_MAX + 1> m_rigidBodies{};
     };
 }

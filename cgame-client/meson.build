@@ -34,6 +34,12 @@ message('CMake targets:\n - ' + '\n - '.join(glm_project.target_list()))
 
 deps += glm_project.dependency('glm')
 
+# --==[FASTGLTF]==--
+fastgltf_project = cmake.subproject('fastgltf')
+message('CMake targets:\n - ' + '\n - '.join(fastgltf_project.target_list()))
+
+deps += fastgltf_project.dependency('fastgltf')
+
 # --==[PHYSICS]==--
 deps += cgame_physics_dep
 
@@ -43,6 +49,7 @@ deps += cgame_assets_dep
 # --==[FILES]==--
 subdir('assets')
 files = [
+    'source/rlgl_impl.cpp',
     'source/client.cpp',
     'source/renderer.cpp',
     'source/input/impl/glfw_input_stream.cpp',

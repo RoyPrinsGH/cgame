@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace world
 {
@@ -8,6 +8,6 @@ namespace world
     {
     public:
         glm::vec3 position;
-        glm::vec4 rotation{0.0f, 0.0f, 0.0f, 1.0f};
+        glm::quat rotation{0.0f, 0.0f, 0.0f, 1.0f};
     };
 }

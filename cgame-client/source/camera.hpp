@@ -3,17 +3,14 @@
 
 namespace engine
 {
-    class camera
+    struct camera
     {
-    public:
-        inline const glm::vec3 &getPosition() const { return m_position; };
-        inline const glm::vec3 &getTarget() const { return m_target; };
-        inline const void setPosition(glm::vec3 position) { m_position = position; };
-        inline const void setTarget(glm::vec3 target) { m_target = target; };
-        inline const void move(glm::vec3 position) { m_position = m_position + position; };
+        glm::vec3 position;
+        glm::vec3 target;
+        glm::vec3 up = {0.0f, 1.0f, 0.0f};
 
-    private:
-        glm::vec3 m_position;
-        glm::vec3 m_target;
+        float fov_y = 45.0f;
+        float near_plane = 0.01f;
+        float far_plane = 1000.0f;
     };
 }

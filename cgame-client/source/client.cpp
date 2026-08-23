@@ -4,7 +4,7 @@
 #include <cgame/physics/physics_controller.hpp>
 
 #include <memory>
-#include <raylib.h>
+#include <rlgl.h>
 
 #include "camera.hpp"
 #include "helpers.hpp"
@@ -14,12 +14,30 @@
 #include "input/button_state_tracker.hpp"
 #include "world/gamestate.hpp"
 #include "events.hpp"
+#include "platform/window.hpp"
 
 int main(void)
 {
-    SetConfigFlags(FLAG_FULLSCREEN_MODE);
-    InitWindow(1280, 720, "the high seas -- client");
-    // SetTargetFPS(10);
+    auto *window = create_window(1280, 720);
+
+    int fb_width;
+    int fb_height;
+
+    glfwGetFramebufferSize(window, &fb_width, &fb_height);
+    rlLoadExtensions((void *)glfwGetProcAddress);
+    rlglInit(fb_width, fb_height);
+    rlViewport(0, 0, fb_width, fb_height);
+    rlEnableDepthTest();
+    rlEnableBackfaceCulling();
+
+    glfwSetFramebufferSizeCallback(
+        window,
+        [](GLFWwindow *, int width, int height)
+        {
+            rlViewport(0, 0, width, height);
+            rlSetFramebufferWidth(width);
+            rlSetFramebufferHeight(height);
+        });
 
     engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
     engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);
@@ -31,7 +49,7 @@ int main(void)
     engine::camera camera;
     engine::renderer renderer;
 
-    camera.setPosition({0.0f, 5.0f, 5.0f});
+    camera.position = {0.0f, 5.0f, 5.0f};
 
     engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
@@ -46,9 +64,11 @@ int main(void)
     int clientTick;
     int syncedTick;
 
-    while (!WindowShouldClose())
+    while (!glfwWindowShouldClose(window))
     {
-        auto dt = GetFrameTime();
+        glfwPollEvents();
+
+        auto dt = 1.0f / 144.0f;
 
         clientTick++;
 
@@ -80,16 +100,16 @@ int main(void)
         // -----==[CAMERA MOVEMENT]==-----
         glm::vec3 cameraPositionDelta{0.0f, 0.0f, 0.0f};
 
-        if (clientOnlyButtonStateTracker.getKeyState(KEY_W).first)
+        if (clientOnlyButtonStateTracker.getKeyState(GLFW_KEY_W).first)
             cameraPositionDelta += glm::vec3{0.0f, 0.0f, 0.5f};
 
-        if (clientOnlyButtonStateTracker.getKeyState(KEY_S).first)
+        if (clientOnlyButtonStateTracker.getKeyState(GLFW_KEY_S).first)
             cameraPositionDelta += glm::vec3{0.0f, 0.0f, -0.5f};
 
-        if (clientOnlyButtonStateTracker.getKeyState(KEY_A).first)
+        if (clientOnlyButtonStateTracker.getKeyState(GLFW_KEY_A).first)
             cameraPositionDelta += glm::vec3{0.5f, 0.0f, 0.0f};
 
-        if (clientOnlyButtonStateTracker.getKeyState(KEY_D).first)
+        if (clientOnlyButtonStateTracker.getKeyState(GLFW_KEY_D).first)
             cameraPositionDelta += glm::vec3{-0.5f, 0.0f, 0.0f};
 
         if (cameraPositionDelta != glm::vec3{0.0f, 0.0f, 0.0f})
@@ -107,7 +127,7 @@ int main(void)
                 if (auto *c = std::get_if<engine::events::camera::camera_move_event>(&ce))
                 {
                     printf("-- camera moved --\n");
-                    camera.move(c->delta);
+                    camera.position += c->delta;
                 }
             }
 
@@ -115,7 +135,7 @@ int main(void)
             {
                 if (auto *k = std::get_if<engine::input::raw::char_key_down>(&ie))
                 {
-                    if (k->key == KEY_K)
+                    if (k->key == GLFW_KEY_K)
                     {
                         printf("-- spawned enemy ship --\n");
 
@@ -131,7 +151,7 @@ int main(void)
                     if (k->button == raw::mouse_button::middle)
                     {
                         printf("-- reset camera position --\n");
-                        camera.setPosition({0.0f, 5.0f, 0.0f});
+                        camera.position = {0.0f, 5.0f, 0.0f};
                     }
                 }
                 else if (auto *k = std::get_if<engine::input::raw::special_key_down>(&ie))
@@ -164,11 +184,14 @@ int main(void)
         }
 
         // -----==[RENDER]==-----
-        renderer.draw(gameState, camera);
+        renderer.draw(window, gameState, camera);
     }
 
     delete physicsController;
 
-    CloseWindow();
+    rlglClose();
+    glfwDestroyWindow(window);
+    glfwTerminate();
+
     return 0;
 }

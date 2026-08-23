@@ -1,7 +1,7 @@
 #pragma once
 #include <cgame/physics/rigid_body.hpp>
 #include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <memory>
 
 namespace cgame::physics
@@ -14,7 +14,7 @@ namespace cgame::physics
     struct entity_snapshot
     {
         glm::vec3 position;
-        glm::vec4 rotation;
+        glm::quat rotation;
     };
 
     struct physics_snapshot
