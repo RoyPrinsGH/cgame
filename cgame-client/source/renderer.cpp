@@ -179,8 +179,11 @@ namespace engine
 
     glm::mat4 makeTransform(const model_instance &instance)
     {
-        return glm::translate(glm::mat4(1.0f), instance.position) *
-               glm::mat4_cast(instance.rotation);
+        return glm::scale(
+            glm::translate(
+                glm::mat4(1.0f), instance.position) *
+                glm::mat4_cast(instance.rotation),
+            glm::vec3(0.1f));
     }
 
     model_instance getModelInstanceDataFromShip(const world::ship &ship)
