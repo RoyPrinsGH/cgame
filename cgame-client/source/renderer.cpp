@@ -286,13 +286,13 @@ namespace engine
         rlEnd();
     }
 
-    glm::mat4 makeTransform(const model_instance &instance)
+    glm::mat4 makeTransform(const model_instance &instance, const float scale)
     {
         return glm::scale(
             glm::translate(
                 glm::mat4(1.0f), instance.position) *
                 glm::mat4_cast(instance.rotation),
-            glm::vec3(0.1f));
+            glm::vec3(scale));
     }
 
     model_instance getModelInstanceDataFromShip(const world::ship &ship)
@@ -339,10 +339,10 @@ namespace engine
         std::vector<glm::mat4> matrices;
         matrices.reserve(gameState.m_enemyShips.size() + 1);
 
-        matrices.push_back(makeTransform(getModelInstanceDataFromShip(gameState.m_playerShip)));
+        matrices.push_back(makeTransform(getModelInstanceDataFromShip(gameState.m_playerShip), 0.1f));
 
         for (const auto &ship : gameState.m_enemyShips)
-            matrices.push_back(makeTransform(getModelInstanceDataFromShip(ship)));
+            matrices.push_back(makeTransform(getModelInstanceDataFromShip(ship), 0.1f));
 
         rlUpdateVertexBuffer(
             m_shipModel.instanceVboId,
