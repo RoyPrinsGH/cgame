@@ -5,7 +5,7 @@ namespace cgame::assets
 {
     class asset_loader
     {
-    public:
+      public:
         collider_spec getColliderSpec();
     };
 }

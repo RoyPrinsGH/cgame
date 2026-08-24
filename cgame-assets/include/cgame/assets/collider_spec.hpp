@@ -1,7 +1,8 @@
 #pragma once
 #include <glm/vec3.hpp>
-#include <vector>
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace cgame::assets
 {
@@ -23,5 +24,11 @@ namespace cgame::assets
         using offset = glm::vec3;
 
         std::vector<std::pair<shape_spec, offset>> colliderParts;
+    };
+
+    struct asset_spec
+    {
+        std::string name;
+        collider_spec colliderSpec;
     };
 }

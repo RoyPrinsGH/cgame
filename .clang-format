@@ -1,0 +1,24 @@
+BasedOnStyle: Microsoft
+
+IndentWidth: 4
+ContinuationIndentWidth: 4
+
+BreakBeforeBraces: Allman
+NamespaceIndentation: All
+
+BreakBeforeTemplateCloser: true
+
+PointerAlignment: Left
+DerivePointerAlignment: false
+
+FixNamespaceComments: false
+
+ColumnLimit: 90
+
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+BinPackParameters: OnePerLine
+AllowAllParametersOfDeclarationOnNextLine: false

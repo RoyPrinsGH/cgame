@@ -18,7 +18,7 @@ cgame_assets_inc = include_directories('include')
 
 cgame_assets = static_library(
   'cgame-assets',
-  'source/asset_loader.cpp',
+  ['source/asset_loader.cpp', 'source/pak.cpp'],
   dependencies: deps,
   include_directories: cgame_assets_inc,
 )

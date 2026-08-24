@@ -24,17 +24,19 @@ namespace engine
 
     class renderer
     {
-    public:
+      public:
         renderer();
 
-        void draw(
-            GLFWwindow *window,
-            const world::game_state &gameState,
-            const camera &camera) const;
+        void draw(GLFWwindow* window,
+                  const world::game_state& gameState,
+                  const camera& camera) const;
 
-        void toggleDebugMode() { m_debugModeEnabled = !m_debugModeEnabled; }
+        void toggleDebugMode()
+        {
+            m_debugModeEnabled = !m_debugModeEnabled;
+        }
 
-    private:
+      private:
         bool m_debugModeEnabled = false;
         void drawShip(world::ship ship);
         unsigned int m_defaultShader;
