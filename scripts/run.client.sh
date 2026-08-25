@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-./../builddir/cgame-client/cgame-client
+./../build-linux/cgame-client/cgame-client

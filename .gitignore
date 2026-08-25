@@ -4,3 +4,5 @@ subprojects/*
 .vscode
 dist
 build-asan
+build-linux
+build-windows

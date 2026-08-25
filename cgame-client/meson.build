@@ -22,11 +22,27 @@ message('CMake targets:\n - ' + '\n - '.join(enet_project.target_list()))
 deps += enet_project.dependency('enet_static')
 
 # --==[BOOST]==--
-boost_project = cmake.subproject('boost')
+boost_options = cmake.subproject_options()
+
+boost_options.add_cmake_defines(
+    {
+        'BOOST_INCLUDE_LIBRARIES': 'lockfree;circular_buffer;dll;range',
+        'BUILD_TESTING': false,
+    },
+)
+
+boost_project = cmake.subproject(
+    'boost',
+    options: boost_options,
+)
+
 message('CMake targets:\n - ' + '\n - '.join(boost_project.target_list()))
 
-deps += boost_project.dependency('boost_dll')
-deps += boost_project.dependency('boost_filesystem')
+deps += boost_project.dependency('boost_lockfree')
+deps += boost_project.dependency('boost_circular_buffer')
+deps += boost_project.dependency('boost_dll_std_fs')
+deps += boost_project.dependency('boost_iterator')
+deps += boost_project.dependency('boost_range')
 
 # --==[GLM]==--
 glm_project = cmake.subproject('glm')

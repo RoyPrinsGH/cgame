@@ -61,8 +61,8 @@ int main(void)
 
     std::vector<cgame::physics::rigid_body_handle> enemyShipHandles;
 
-    int clientTick;
-    int syncedTick;
+    int clientTick = 0;
+    int syncedTick = 0;
 
     while (!glfwWindowShouldClose(window))
     {
