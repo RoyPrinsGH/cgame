@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cgame/assets/pak.hpp>
+
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -25,7 +27,7 @@ namespace engine
     class renderer
     {
       public:
-        renderer();
+        renderer(cgame::assets::pak* pakPtr);
 
         void draw(GLFWwindow* window,
                   const world::game_state& gameState,
@@ -37,6 +39,9 @@ namespace engine
         }
 
       private:
+        const gpu_model uploadModel(const cgame::assets::virtual_asset_path& path,
+                                    int max_instances) const;
+        cgame::assets::pak* m_pakPtr;
         bool m_debugModeEnabled = false;
         void drawShip(world::ship ship);
         unsigned int m_defaultShader;

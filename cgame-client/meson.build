@@ -63,7 +63,6 @@ deps += cgame_physics_dep
 deps += cgame_assets_dep
 
 # --==[FILES]==--
-subdir('assets')
 files = [
     'source/rlgl_impl.cpp',
     'source/stb_image_impl.cpp',

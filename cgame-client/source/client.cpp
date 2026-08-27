@@ -4,6 +4,7 @@
 #include <cgame/assets/pak.hpp>
 #include <cgame/physics/physics_controller.hpp>
 
+#include <boost/dll/runtime_symbol_info.hpp>
 #include <memory>
 #include <rlgl.h>
 
@@ -47,7 +48,6 @@ int main(void)
     engine::events::tick_history tickHistory;
 
     engine::camera camera;
-    engine::renderer renderer;
 
     camera.position = {0.0f, 5.0f, 5.0f};
 
@@ -60,16 +60,21 @@ int main(void)
 
     std::vector<cgame::physics::rigid_body_handle> enemyShipHandles;
 
-    cgame::assets::pak pak("/home/rvne/development/cgame/cgame-client/assets/game.pak");
-
-    // Move to pak.json
     const cgame::assets::virtual_asset_path shipPath({"models", "ships", "baseShip"});
-    pak.insertInIndex(shipPath, {
-                                    .offset = 0x0,
-                                    .length = 0x10000,
-                                });
 
-    const auto shipData = pak.data(shipPath);
+    auto executableDir = boost::dll::program_location().parent_path();
+    auto pakPath = executableDir / "assets" / "client.cgpak";
+
+    cgame::assets::pak_builder pakBuilder;
+
+    pakBuilder.add({{"models", "ships", "baseShip"}},
+                   "/home/rvne/development/cgame/cgame-client/assets/ship.glb");
+
+    pakBuilder.build(pakPath);
+
+    cgame::assets::pak pak(pakPath);
+
+    engine::renderer renderer(&pak);
 
     int clientTick = 0;
     int syncedTick = 0;

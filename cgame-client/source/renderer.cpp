@@ -1,5 +1,3 @@
-#include <boost/dll/runtime_symbol_info.hpp>
-
 #define RAYMATH_STATIC_INLINE
 #include <raymath.h>
 
@@ -109,19 +107,20 @@ namespace engine
         return texture;
     }
 
-    gpu_model loadModel(const std::filesystem::path& path, int max_instances)
+    const gpu_model renderer::uploadModel(const cgame::assets::virtual_asset_path& path,
+                                          int max_instances) const
     {
         fastgltf::Parser parser;
 
-        auto file = fastgltf::MappedGltfFile::FromPath(path);
+        auto bytes = m_pakPtr->data(path);
+
+        auto file = fastgltf::GltfDataBuffer::FromBytes(bytes.data(), bytes.size());
 
         if (!file)
             throw std::runtime_error("could not open glb");
 
-        auto loaded = parser.loadGltf(file.get(), path.parent_path(),
-                                      fastgltf::Options::LoadExternalBuffers |
-                                          fastgltf::Options::GenerateMeshIndices |
-                                          fastgltf::Options::LoadExternalImages);
+        auto loaded =
+            parser.loadGltf(file.get(), {}, fastgltf::Options::GenerateMeshIndices);
 
         if (loaded.error() != fastgltf::Error::None)
             throw std::runtime_error("could not parse glb");
@@ -249,8 +248,10 @@ namespace engine
         return model;
     }
 
-    renderer::renderer()
+    renderer::renderer(cgame::assets::pak* pakPtr)
     {
+        m_pakPtr = pakPtr;
+
         const std::string vertexShaderCode = readTextFile(
             "/home/rvne/development/cgame/cgame-client/shaders/default.vert");
         const std::string fragmentShaderCode = readTextFile(
@@ -268,8 +269,7 @@ namespace engine
         m_defaultShaderBaseColorTextureLocation =
             rlGetLocationUniform(m_defaultShader, "baseColorTexture");
 
-        m_shipModel =
-            loadModel("/home/rvne/development/cgame/cgame-client/assets/ship.glb", 256);
+        m_shipModel = uploadModel({{"models", "ships", "baseShip"}}, 256);
     }
 
     void drawGrid(int slices, float spacing)
