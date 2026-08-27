@@ -1,10 +1,13 @@
 #pragma once
+
 #include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <variant>
 #include <vector>
+
+#include <cgame/assets/mapped_file.hpp>
 
 namespace cgame::assets
 {
@@ -28,15 +31,13 @@ namespace cgame::assets
     class pak
     {
       public:
-        explicit pak(const std::filesystem::path pakFile)
-            : m_pakFile(std::move(pakFile)) {};
+        explicit pak(const std::filesystem::path pakFile) : m_file(std::move(pakFile)) {};
         void insertInIndex(const virtual_asset_path& path, pak_block block);
-        pak_block findBlock(const virtual_asset_path& path);
+        std::span<const std::byte> data(const virtual_asset_path& path) const;
 
       private:
-        uint64_t m_cachedMemoryOffset = 0;
-        std::vector<std::byte> m_cachedMemory;
+        pak_block findBlock(const virtual_asset_path& path) const;
+        cgame::platform::mapped_file m_file;
         pak_node m_indexRoot{};
-        const std::filesystem::path m_pakFile;
     };
 }

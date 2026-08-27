@@ -31,11 +31,11 @@ namespace cgame::assets
     }
 
     // TODO: maybe make optional?
-    pak_block pak::findBlock(const virtual_asset_path& path)
+    pak_block pak::findBlock(const virtual_asset_path& path) const
     {
         if (path.pathParts.empty())
             throw std::invalid_argument("path cannot be empty");
-        pak_node* currentNode = &m_indexRoot;
+        const pak_node* currentNode = &m_indexRoot;
         for (std::size_t i = 0; i + 1 < path.pathParts.size(); i++)
         {
             const auto& pathPart = path.pathParts[i];
@@ -56,5 +56,11 @@ namespace cgame::assets
         if (block == nullptr)
             throw std::invalid_argument("path component is not a block: " + filetag);
         return *block;
+    }
+
+    std::span<const std::byte> pak::data(const virtual_asset_path& path) const
+    {
+        const pak_block block = findBlock(path);
+        return m_file.bytes().subspan(block.offset, block.length);
     }
 }

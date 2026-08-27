@@ -18,9 +18,12 @@ cgame_assets_inc = include_directories('include')
 
 cgame_assets = static_library(
   'cgame-assets',
-  ['source/asset_loader.cpp', 'source/pak.cpp'],
+  ['source/asset_loader.cpp', 'source/pak.cpp', 'source/mapped_file.cpp'],
   dependencies: deps,
   include_directories: cgame_assets_inc,
+  override_options: [
+    'cpp_std=c++20',
+  ],
 )
 
 cgame_assets_dep = declare_dependency(

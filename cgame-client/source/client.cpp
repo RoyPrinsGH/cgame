@@ -1,43 +1,43 @@
 #include <cgame/assets/asset_info.hpp>
 #include <cgame/assets/asset_loader.hpp>
 #include <cgame/assets/collider_spec.hpp>
+#include <cgame/assets/pak.hpp>
 #include <cgame/physics/physics_controller.hpp>
 
 #include <memory>
 #include <rlgl.h>
 
 #include "camera.hpp"
+#include "events.hpp"
 #include "helpers.hpp"
-#include "renderer.hpp"
+#include "input/button_state_tracker.hpp"
 #include "input/impl/glfw_input_hook.hpp"
 #include "input/impl/glfw_input_stream.hpp"
-#include "input/button_state_tracker.hpp"
-#include "world/gamestate.hpp"
-#include "events.hpp"
 #include "platform/window.hpp"
+#include "renderer.hpp"
+#include "world/gamestate.hpp"
 
 int main(void)
 {
-    auto *window = create_window(1280, 720);
+    auto* window = create_window(1280, 720);
 
     int fb_width;
     int fb_height;
 
     glfwGetFramebufferSize(window, &fb_width, &fb_height);
-    rlLoadExtensions((void *)glfwGetProcAddress);
+    rlLoadExtensions((void*)glfwGetProcAddress);
     rlglInit(fb_width, fb_height);
     rlViewport(0, 0, fb_width, fb_height);
     rlEnableDepthTest();
     rlEnableBackfaceCulling();
 
-    glfwSetFramebufferSizeCallback(
-        window,
-        [](GLFWwindow *, int width, int height)
-        {
-            rlViewport(0, 0, width, height);
-            rlSetFramebufferWidth(width);
-            rlSetFramebufferHeight(height);
-        });
+    glfwSetFramebufferSizeCallback(window,
+                                   [](GLFWwindow*, int width, int height)
+                                   {
+                                       rlViewport(0, 0, width, height);
+                                       rlSetFramebufferWidth(width);
+                                       rlSetFramebufferHeight(height);
+                                   });
 
     engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
     engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);
@@ -53,13 +53,23 @@ int main(void)
 
     engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
-    auto *physicsController = new cgame::physics::physics_controller();
+    auto* physicsController = new cgame::physics::physics_controller();
 
     auto playerShipHandle = physicsController->spawn(
-        cgame::physics::collision_shape::ship,
-        cgame::physics::spawn_data{.mass = 0.5f});
+        cgame::physics::collision_shape::ship, cgame::physics::spawn_data{.mass = 0.5f});
 
     std::vector<cgame::physics::rigid_body_handle> enemyShipHandles;
+
+    cgame::assets::pak pak("/home/rvne/development/cgame/cgame-client/assets/game.pak");
+
+    // Move to pak.json
+    const cgame::assets::virtual_asset_path shipPath = {.pathParts = {"models/ship"}};
+    pak.insertInIndex(shipPath, {
+                                    .offset = 0x0,
+                                    .length = 0x10000,
+                                });
+
+    const auto shipData = pak.data(shipPath);
 
     int clientTick = 0;
     int syncedTick = 0;
@@ -77,21 +87,25 @@ int main(void)
         // -----==[INPUT PROCESSING]==-----
         while (auto key = glfwRawInputStream.readNextRawNonBlocking())
         {
-            if (auto *e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
+            if (auto* e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
             {
                 clientOnlyButtonStateTracker.setKeyState(e->key, true);
             }
-            else if (auto *e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
+            else if (auto* e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
             {
                 clientOnlyButtonStateTracker.setKeyState(e->key, false);
             }
-            else if (auto *e = std::get_if<engine::input::raw::mouse_button_down>(&key.value()))
+            else if (auto* e =
+                         std::get_if<engine::input::raw::mouse_button_down>(&key.value()))
             {
-                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button, true);
+                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button,
+                                                                 true);
             }
-            else if (auto *e = std::get_if<engine::input::raw::mouse_button_up>(&key.value()))
+            else if (auto* e =
+                         std::get_if<engine::input::raw::mouse_button_up>(&key.value()))
             {
-                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button, false);
+                clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button,
+                                                                 false);
             }
 
             tickEvents.m_inputEvents.push_back(std::move(key.value()));
@@ -113,27 +127,28 @@ int main(void)
             cameraPositionDelta += glm::vec3{-0.5f, 0.0f, 0.0f};
 
         if (cameraPositionDelta != glm::vec3{0.0f, 0.0f, 0.0f})
-            tickEvents.m_cameraEvents.push_back(std::move(engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
+            tickEvents.m_cameraEvents.push_back(std::move(
+                engine::events::camera::camera_move_event{.delta = cameraPositionDelta}));
 
         // -----==[RUN EVENTS]==-----
         tickHistory.registerHistory(clientTick, tickEvents);
 
-        for (auto &t : tickHistory.getHistoryFrom(syncedTick))
+        for (auto& t : tickHistory.getHistoryFrom(syncedTick))
         {
             printf("-- tick: %i --\n", t.first);
 
-            for (auto &ce : t.second.m_cameraEvents)
+            for (auto& ce : t.second.m_cameraEvents)
             {
-                if (auto *c = std::get_if<engine::events::camera::camera_move_event>(&ce))
+                if (auto* c = std::get_if<engine::events::camera::camera_move_event>(&ce))
                 {
                     printf("-- camera moved --\n");
                     camera.position += c->delta;
                 }
             }
 
-            for (auto &ie : t.second.m_inputEvents)
+            for (auto& ie : t.second.m_inputEvents)
             {
-                if (auto *k = std::get_if<engine::input::raw::char_key_down>(&ie))
+                if (auto* k = std::get_if<engine::input::raw::char_key_down>(&ie))
                 {
                     if (k->key == GLFW_KEY_K)
                     {
@@ -141,12 +156,15 @@ int main(void)
 
                         auto enemyShipHandle = physicsController->spawn(
                             cgame::physics::collision_shape::ship,
-                            cgame::physics::spawn_data{.mass = 0.5f, .position = {4.0f, 0.0f, (float)clientTick / 1000.0f}});
+                            cgame::physics::spawn_data{
+                                .mass = 0.5f,
+                                .position = {4.0f, 0.0f, (float)clientTick / 1000.0f}});
 
                         enemyShipHandles.push_back(enemyShipHandle);
                     }
                 }
-                else if (auto *k = std::get_if<engine::input::raw::mouse_button_down>(&ie))
+                else if (auto* k =
+                             std::get_if<engine::input::raw::mouse_button_down>(&ie))
                 {
                     if (k->button == raw::mouse_button::middle)
                     {
@@ -154,7 +172,7 @@ int main(void)
                         camera.position = {0.0f, 5.0f, 0.0f};
                     }
                 }
-                else if (auto *k = std::get_if<engine::input::raw::special_key_down>(&ie))
+                else if (auto* k = std::get_if<engine::input::raw::special_key_down>(&ie))
                 {
                     if (k->key == raw::special_key::f3)
                     {
@@ -170,17 +188,18 @@ int main(void)
         physicsController->simulateStep(dt);
 
         auto physicsSnapshot = physicsController->getSnapshot();
-        auto &playerShipSnapshot = physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId];
+        auto& playerShipSnapshot =
+            physicsSnapshot.activeEntities[playerShipHandle.rigidBodyId];
         gameState.m_playerShip.position = playerShipSnapshot.position;
         gameState.m_playerShip.rotation = playerShipSnapshot.rotation;
         gameState.m_enemyShips.clear();
         for (auto enemyShipHandle : enemyShipHandles)
         {
-            auto &enemyShipSnapshot = physicsSnapshot.activeEntities[enemyShipHandle.rigidBodyId];
+            auto& enemyShipSnapshot =
+                physicsSnapshot.activeEntities[enemyShipHandle.rigidBodyId];
             gameState.m_enemyShips.push_back(
-                world::ship{
-                    .position = enemyShipSnapshot.position,
-                    .rotation = enemyShipSnapshot.rotation});
+                world::ship{.position = enemyShipSnapshot.position,
+                            .rotation = enemyShipSnapshot.rotation});
         }
 
         // -----==[RENDER]==-----
