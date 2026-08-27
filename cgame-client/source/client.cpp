@@ -63,7 +63,7 @@ int main(void)
     cgame::assets::pak pak("/home/rvne/development/cgame/cgame-client/assets/game.pak");
 
     // Move to pak.json
-    const cgame::assets::virtual_asset_path shipPath = {.pathParts = {"models/ship"}};
+    const cgame::assets::virtual_asset_path shipPath({"models", "ships", "baseShip"});
     pak.insertInIndex(shipPath, {
                                     .offset = 0x0,
                                     .length = 0x10000,

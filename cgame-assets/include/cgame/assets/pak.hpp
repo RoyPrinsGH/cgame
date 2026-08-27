@@ -11,9 +11,19 @@
 
 namespace cgame::assets
 {
-    struct virtual_asset_path
+    class virtual_asset_path
     {
-        std::vector<std::string> pathParts;
+      public:
+        virtual_asset_path(const std::vector<std::string> pathParts)
+            : m_pathParts(std::move(pathParts)) {};
+        [[nodiscard]]
+        std::span<const std::string> pathParts() const
+        {
+            return {m_pathParts.begin(), m_pathParts.size()};
+        }
+
+      private:
+        const std::vector<std::string> m_pathParts;
     };
 
     struct pak_block

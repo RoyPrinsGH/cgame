@@ -4,12 +4,12 @@ namespace cgame::assets
 {
     void pak::insertInIndex(const virtual_asset_path& path, pak_block block)
     {
-        if (path.pathParts.empty())
+        if (path.pathParts().empty())
             throw std::invalid_argument("path cannot be empty");
         pak_node* currentNode = &m_indexRoot;
-        for (std::size_t i = 0; i + 1 < path.pathParts.size(); i++)
+        for (std::size_t i = 0; i + 1 < path.pathParts().size(); i++)
         {
-            const auto& pathPart = path.pathParts[i];
+            const auto& pathPart = path.pathParts()[i];
             auto it = currentNode->contents.find(pathPart);
             if (it == currentNode->contents.end())
             {
@@ -23,7 +23,7 @@ namespace cgame::assets
                                             pathPart);
             currentNode = node->get();
         }
-        const auto& filetag = path.pathParts.back();
+        const auto& filetag = path.pathParts().back();
         auto [it, inserted] =
             currentNode->contents.try_emplace(filetag, std::move(block));
         if (!inserted)
@@ -33,12 +33,12 @@ namespace cgame::assets
     // TODO: maybe make optional?
     pak_block pak::findBlock(const virtual_asset_path& path) const
     {
-        if (path.pathParts.empty())
+        if (path.pathParts().empty())
             throw std::invalid_argument("path cannot be empty");
         const pak_node* currentNode = &m_indexRoot;
-        for (std::size_t i = 0; i + 1 < path.pathParts.size(); i++)
+        for (std::size_t i = 0; i + 1 < path.pathParts().size(); i++)
         {
-            const auto& pathPart = path.pathParts[i];
+            const auto& pathPart = path.pathParts()[i];
             auto it = currentNode->contents.find(pathPart);
             if (it == currentNode->contents.end())
                 throw std::invalid_argument("path does not exist: " + pathPart);
@@ -48,7 +48,7 @@ namespace cgame::assets
                                             pathPart);
             currentNode = node->get();
         }
-        const auto& filetag = path.pathParts.back();
+        const auto& filetag = path.pathParts().back();
         auto it = currentNode->contents.find(filetag);
         if (it == currentNode->contents.end())
             throw std::invalid_argument("path does not exist: " + filetag);
