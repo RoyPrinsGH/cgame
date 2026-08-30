@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -39,10 +40,10 @@ namespace cgame::project
         }
 
         [[nodiscard]]
-        project_definition readProjectDefinition() const;
+        const std::optional<project_definition> readProjectDefinition() const;
 
         [[nodiscard]]
-        std::vector<packable_asset> getAssetsForPacking(pack_mode mode) const;
+        const std::vector<packable_asset> getAssetsForPacking(pack_mode mode) const;
 
       private:
         std::filesystem::path m_projectRoot;

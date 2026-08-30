@@ -1,5 +1,9 @@
+#include <cgame/assets/pak.hpp>
+#include <cgame/project/project.hpp>
+
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <span>
 #include <string_view>
 
@@ -15,8 +19,10 @@ namespace
             << "  cgame-cli <command> [options]\n"
             << "\n"
             << "Commands:\n"
-            << "  help       Show this message\n"
-            << "  version    Show the version\n"
+            << "  help         Show this message\n"
+            << "  version      Show the version\n"
+            << "  pack-client  Pack assets for client\n"
+            << "  pack-server  Pack assets for server\n"
             << "\n"
             << "Options:\n"
             << "  -h, --help       Show this message\n"
@@ -45,6 +51,45 @@ int main(int argc, char** argv)
     if (command == "version" || command == "-v" || command == "--version")
     {
         std::cout << VERSION << "\n";
+        return 0;
+    }
+
+    if (command == "pack-client")
+    {
+        const cgame::project::project project{std::filesystem::current_path()};
+
+        const auto maybeProjectDefinition = project.readProjectDefinition();
+
+        if (!maybeProjectDefinition.has_value())
+        {
+            std::cerr << "project.yaml does not exist in this directory" << std::endl;
+            return 2;
+        }
+
+        const auto projectDefinition = maybeProjectDefinition.value();
+
+        std::cout << "[META] project name = " << projectDefinition.name << "\n"
+                  << "[META] project type = "
+                  << (projectDefinition.buildMultiplayer ? "NETWORKED" : "OFFLINE")
+                  << "\n";
+
+        const auto assetsToPack =
+            project.getAssetsForPacking(cgame::project::pack_mode::client);
+
+        cgame::assets::pak_builder pakBuilder;
+
+        for (const auto& asset : assetsToPack)
+        {
+            std::cout << "[ASSETS] registering "
+                      << std::filesystem::relative(asset.realFile,
+                                                   std::filesystem::current_path())
+                      << "\n";
+            pakBuilder.add(asset.virtualPath, asset.realFile);
+        };
+
+        std::cout << "[ASSETS] building \"client.cgpak\"..." << "\n";
+        pakBuilder.build("client.cgpak");
+
         return 0;
     }
 

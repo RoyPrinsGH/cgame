@@ -71,9 +71,13 @@ namespace cgame::project
         }
     }
 
-    project_definition project::readProjectDefinition() const
+    const std::optional<project_definition> project::readProjectDefinition() const
     {
         const auto definitionPath = m_projectRoot / PROJECT_DEFINITION_FILE;
+
+        if (!std::filesystem::exists(definitionPath))
+            return std::nullopt;
+
         const auto definitionPathText = definitionPath.string();
         const auto yaml = readFileText(definitionPath);
 
@@ -101,7 +105,7 @@ namespace cgame::project
         return definition;
     }
 
-    std::vector<packable_asset> project::getAssetsForPacking(pack_mode mode) const
+    const std::vector<packable_asset> project::getAssetsForPacking(pack_mode mode) const
     {
         std::vector<packable_asset> assets;
 

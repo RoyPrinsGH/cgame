@@ -4,6 +4,7 @@
 #include <array>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
 
@@ -180,9 +181,18 @@ namespace cgame::assets
             indexFile.flush();
             if (!indexFile)
                 throw std::runtime_error("failed to write pak index");
-            pakFile << inputFile.rdbuf();
-            if (!pakFile)
-                throw std::runtime_error("failed while writing pak");
+            if (fileSize > 0)
+            {
+                pakFile << inputFile.rdbuf();
+                if (!pakFile)
+                    throw std::runtime_error("failed while writing pak: " +
+                                             pending.realFile.string());
+            }
+            else
+            {
+                std::cerr << "[ERR] virtual asset \"" << pending.path
+                          << "\" is 0 bytes -- skipping" << std::endl;
+            }
             currentOffset += fileSize;
         }
     }
