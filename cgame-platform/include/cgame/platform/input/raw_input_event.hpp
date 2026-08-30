@@ -1,7 +1,9 @@
 #pragma once
+
+#include <cstdint>
 #include <variant>
 
-namespace engine::input::raw
+namespace cgame::platform::input::raw
 {
     enum special_key
     {
@@ -22,12 +24,12 @@ namespace engine::input::raw
 
     struct char_key_down
     {
-        uint8_t key;
+        std::uint8_t key;
     };
 
     struct char_key_up
     {
-        uint8_t key;
+        std::uint8_t key;
     };
 
     struct mouse_move
@@ -57,13 +59,12 @@ namespace engine::input::raw
     {
     };
 
-    using input_event = std::variant<
-        special_key_up,
-        special_key_down,
-        char_key_down,
-        char_key_up,
-        mouse_move,
-        mouse_button_up,
-        mouse_button_down,
-        other>;
+    using input_event = std::variant<special_key_up,
+                                     special_key_down,
+                                     char_key_down,
+                                     char_key_up,
+                                     mouse_move,
+                                     mouse_button_up,
+                                     mouse_button_down,
+                                     other>;
 }

@@ -4,10 +4,8 @@
 #include <boost/range/iterator_range.hpp>
 #include <unordered_map>
 #include <vector>
-#include "input/raw_input_event.hpp"
+#include <cgame/platform/input/raw_input_event.hpp>
 #include <glm/vec3.hpp>
-
-using namespace engine::input;
 
 namespace engine::events
 {
@@ -23,7 +21,7 @@ namespace engine::events
 
     struct tick_events_unbounded
     {
-        std::vector<raw::input_event> m_inputEvents;
+        std::vector<cgame::platform::input::raw::input_event> m_inputEvents;
         std::vector<camera::camera_event> m_cameraEvents;
     };
 

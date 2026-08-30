@@ -3,6 +3,10 @@
 #include <cgame/assets/collider_spec.hpp>
 #include <cgame/assets/pak.hpp>
 #include <cgame/physics/physics_controller.hpp>
+#include <cgame/platform/input/button_state_tracker.hpp>
+#include <cgame/platform/input/glfw_input_hook.hpp>
+#include <cgame/platform/input/glfw_input_stream.hpp>
+#include <cgame/platform/window.hpp>
 
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <memory>
@@ -11,16 +15,12 @@
 #include "camera.hpp"
 #include "events.hpp"
 #include "helpers.hpp"
-#include "input/button_state_tracker.hpp"
-#include "input/impl/glfw_input_hook.hpp"
-#include "input/impl/glfw_input_stream.hpp"
-#include "platform/window.hpp"
 #include "renderer.hpp"
 #include "world/gamestate.hpp"
 
 int main(void)
 {
-    auto* window = create_window(1280, 720);
+    auto* window = cgame::platform::createWindow(1280, 720, "cgame");
 
     int fb_width;
     int fb_height;
@@ -40,8 +40,8 @@ int main(void)
                                        rlSetFramebufferHeight(height);
                                    });
 
-    engine::input::glfw::glfw_raw_input_stream glfwRawInputStream;
-    engine::input::glfw::InstallGlfwInputHandlerObj(&glfwRawInputStream);
+    cgame::platform::input::glfw::glfw_raw_input_stream glfwRawInputStream;
+    cgame::platform::input::glfw::installGlfwInputHandler(&glfwRawInputStream);
 
     world::game_state gameState;
 
@@ -51,7 +51,7 @@ int main(void)
 
     camera.position = {0.0f, 5.0f, 5.0f};
 
-    engine::input::button_state_tracker<> clientOnlyButtonStateTracker;
+    cgame::platform::input::button_state_tracker<> clientOnlyButtonStateTracker;
 
     auto* physicsController = new cgame::physics::physics_controller();
 
@@ -92,22 +92,25 @@ int main(void)
         // -----==[INPUT PROCESSING]==-----
         while (auto key = glfwRawInputStream.readNextRawNonBlocking())
         {
-            if (auto* e = std::get_if<engine::input::raw::char_key_down>(&key.value()))
+            if (auto* e =
+                    std::get_if<cgame::platform::input::raw::char_key_down>(&key.value()))
             {
                 clientOnlyButtonStateTracker.setKeyState(e->key, true);
             }
-            else if (auto* e = std::get_if<engine::input::raw::char_key_up>(&key.value()))
+            else if (auto* e = std::get_if<cgame::platform::input::raw::char_key_up>(
+                         &key.value()))
             {
                 clientOnlyButtonStateTracker.setKeyState(e->key, false);
             }
             else if (auto* e =
-                         std::get_if<engine::input::raw::mouse_button_down>(&key.value()))
+                         std::get_if<cgame::platform::input::raw::mouse_button_down>(
+                             &key.value()))
             {
                 clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button,
                                                                  true);
             }
-            else if (auto* e =
-                         std::get_if<engine::input::raw::mouse_button_up>(&key.value()))
+            else if (auto* e = std::get_if<cgame::platform::input::raw::mouse_button_up>(
+                         &key.value()))
             {
                 clientOnlyButtonStateTracker.setMouseButtonState((uint8_t)e->button,
                                                                  false);
@@ -153,7 +156,8 @@ int main(void)
 
             for (auto& ie : t.second.m_inputEvents)
             {
-                if (auto* k = std::get_if<engine::input::raw::char_key_down>(&ie))
+                if (auto* k =
+                        std::get_if<cgame::platform::input::raw::char_key_down>(&ie))
                 {
                     if (k->key == GLFW_KEY_K)
                     {
@@ -169,17 +173,20 @@ int main(void)
                     }
                 }
                 else if (auto* k =
-                             std::get_if<engine::input::raw::mouse_button_down>(&ie))
+                             std::get_if<cgame::platform::input::raw::mouse_button_down>(
+                                 &ie))
                 {
-                    if (k->button == raw::mouse_button::middle)
+                    if (k->button == cgame::platform::input::raw::mouse_button::middle)
                     {
                         printf("-- reset camera position --\n");
                         camera.position = {0.0f, 5.0f, 0.0f};
                     }
                 }
-                else if (auto* k = std::get_if<engine::input::raw::special_key_down>(&ie))
+                else if (auto* k =
+                             std::get_if<cgame::platform::input::raw::special_key_down>(
+                                 &ie))
                 {
-                    if (k->key == raw::special_key::f3)
+                    if (k->key == cgame::platform::input::raw::special_key::f3)
                     {
                         printf("-- toggled debug mode --\n");
                         renderer.toggleDebugMode();

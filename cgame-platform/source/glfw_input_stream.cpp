@@ -1,23 +1,24 @@
-#include "glfw_input_stream.hpp"
+#include <cgame/platform/input/glfw_input_stream.hpp>
 
-namespace engine::input::glfw
+namespace cgame::platform::input::glfw
 {
     const std::optional<raw::input_event> glfw_raw_input_stream::readNextRawNonBlocking()
     {
         std::variant<glfw_key_input, glfw_mouse_input> glfwInput;
+
         if (!m_eventQueue.pop(glfwInput))
             return std::nullopt;
 
-        if (auto *keyInput = std::get_if<glfw_key_input>(&glfwInput))
+        if (auto* keyInput = std::get_if<glfw_key_input>(&glfwInput))
         {
             if (GLFW_KEY_A <= keyInput->key && keyInput->key <= GLFW_KEY_Z)
             {
                 switch (keyInput->action)
                 {
                 case GLFW_PRESS:
-                    return raw::char_key_down{.key = (uint8_t)keyInput->key};
+                    return raw::char_key_down{.key = (std::uint8_t)keyInput->key};
                 case GLFW_RELEASE:
-                    return raw::char_key_up{.key = (uint8_t)keyInput->key};
+                    return raw::char_key_up{.key = (std::uint8_t)keyInput->key};
                 default:
                     return raw::other{};
                 };
@@ -37,7 +38,8 @@ namespace engine::input::glfw
 
             return raw::other{};
         }
-        else if (auto *mouseInput = std::get_if<glfw_mouse_input>(&glfwInput))
+
+        if (auto* mouseInput = std::get_if<glfw_mouse_input>(&glfwInput))
         {
             raw::mouse_button mouseButton;
 
@@ -66,5 +68,7 @@ namespace engine::input::glfw
                 return raw::other{};
             };
         }
+
+        return raw::other{};
     }
 }
