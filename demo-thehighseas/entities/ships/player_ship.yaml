@@ -1,0 +1,5 @@
+name: Player Ship
+model: ships/basic_ship.glb
+collision:
+- type: sphere
+  radius: 5.0

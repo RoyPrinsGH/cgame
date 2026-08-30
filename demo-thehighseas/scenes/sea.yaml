@@ -1,0 +1,15 @@
+name: Sea
+
+water:
+  enabled: true
+  level: 0
+
+scripts:
+- id: client/hp_gui.luau
+- id: shared/player_ship.luau
+  target: seaPlayerShip
+
+entities:
+- id: seaPlayerShip
+  proto: ships/player_ship
+  location: 0 0 0

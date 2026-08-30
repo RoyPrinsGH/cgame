@@ -3,22 +3,25 @@
 #include <span>
 #include <string_view>
 
-constexpr std::string_view version = "0.1.0";
-
-void printUsage(std::ostream& out)
+namespace
 {
-    out << "cgame-cli " << version << "\n"
-        << "\n"
-        << "Usage:\n"
-        << "  cgame-cli <command> [options]\n"
-        << "\n"
-        << "Commands:\n"
-        << "  help       Show this message\n"
-        << "  version    Show the version\n"
-        << "\n"
-        << "Options:\n"
-        << "  -h, --help       Show this message\n"
-        << "  -v, --version    Show the version\n";
+    constexpr std::string_view VERSION = "0.1.0";
+
+    void printUsage(std::ostream& out)
+    {
+        out << "cgame-cli " << VERSION << "\n"
+            << "\n"
+            << "Usage:\n"
+            << "  cgame-cli <command> [options]\n"
+            << "\n"
+            << "Commands:\n"
+            << "  help       Show this message\n"
+            << "  version    Show the version\n"
+            << "\n"
+            << "Options:\n"
+            << "  -h, --help       Show this message\n"
+            << "  -v, --version    Show the version\n";
+    }
 }
 
 int main(int argc, char** argv)
@@ -41,7 +44,7 @@ int main(int argc, char** argv)
 
     if (command == "version" || command == "-v" || command == "--version")
     {
-        std::cout << version << "\n";
+        std::cout << VERSION << "\n";
         return 0;
     }
 
