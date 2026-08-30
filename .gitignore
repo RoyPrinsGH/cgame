@@ -6,3 +6,5 @@ dist
 build-asan
 build-linux
 build-windows
+*.cgpak
+*.cgpak.index
