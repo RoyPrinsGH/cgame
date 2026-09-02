@@ -9,6 +9,7 @@
 #include <cgame/graphics/mesh.hpp>
 #include <cgame/graphics/model.hpp>
 #include <cgame/graphics/shader.hpp>
+#include <cgame/graphics/texture.hpp>
 
 namespace cgame::graphics
 {
@@ -25,7 +26,10 @@ namespace cgame::graphics
         virtual void activateShader(shader_handle shader) = 0;
         virtual void deactivateShader() = 0;
 
-        virtual model_handle uploadMesh(std::span<const mesh_data> primitives) = 0;
+        virtual texture_handle uploadTexture(const image_data& image) = 0;
+
+        virtual model_handle uploadMesh(std::span<const primitive_data> primitives,
+                                        std::span<const texture_handle> textures) = 0;
 
         virtual void uploadInstances(model_handle model,
                                      std::span<const glm::mat4> instances) = 0;

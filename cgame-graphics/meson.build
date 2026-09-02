@@ -25,16 +25,7 @@ cgame_graphics_private_inc = include_directories(
 )
 
 # --==[FILES]==--
-files = [
-    'source/render.cpp',
-    'source/model_controller.cpp',
-    'source/shader_controller.cpp',
-    'source/gltf_loader.cpp',
-    'source/mesh.cpp',
-    'source/backend/gl33_backend.cpp',
-    'source/rlgl_impl.cpp',
-    'source/stb_image_impl.cpp',
-]
+files = ['source/gltf_loader.cpp']
 
 # --==[BUILD!]==--
 cgame_graphics = static_library(

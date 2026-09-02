@@ -16,15 +16,21 @@ namespace cgame::graphics
         std::vector<std::uint8_t> pixels;
     };
 
-    struct mesh_data
+    struct primitive_data
     {
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
-        std::vector<std::uint16_t> indices;
-        image_data albedo;
+        std::vector<std::uint32_t> indices;
+        int albedoIndex = -1;
+    };
+
+    struct model_data
+    {
+        std::vector<image_data> images;
+        std::vector<primitive_data> primitives;
     };
 
     [[nodiscard]]
-    mesh_data makeGridMesh(int slices, float spacing);
+    primitive_data makeGridMesh(int slices, float spacing);
 }
