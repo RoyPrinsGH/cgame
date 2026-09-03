@@ -4,9 +4,6 @@
 #include <string>
 #include <vector>
 
-#define RAYMATH_STATIC_INLINE
-#include <raymath.h>
-
 #define GRAPHICS_API_OPENGL_33
 #include <rlgl.h>
 
@@ -318,8 +315,8 @@ namespace cgame::graphics
 
             shader_handle m_activeShader;
 
-            Matrix m_view = MatrixIdentity();
-            Matrix m_projection = MatrixIdentity();
+            Matrix m_view = toRayMatrix(glm::mat4(1.0f));
+            Matrix m_projection = toRayMatrix(glm::mat4(1.0f));
         };
     }
 
