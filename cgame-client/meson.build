@@ -36,10 +36,11 @@ deps += cgame_physics_dep
 # --==[ASSETS]==--
 deps += cgame_assets_dep
 
+# --==[GRAPHICS]==--
+deps += cgame_graphics_dep
+
 # --==[FILES]==--
 files = [
-    'source/rlgl_impl.cpp',
-    'source/stb_image_impl.cpp',
     'source/client.cpp',
     'source/renderer.cpp',
 ]

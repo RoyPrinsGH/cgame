@@ -28,6 +28,8 @@ cgame_graphics_private_inc = include_directories(
 files = [
     'source/gltf_loader.cpp',
     'source/grid.cpp',
+    'source/rlgl_impl.cpp',
+    'source/stb_image_impl.cpp',
     'source/model_controller.cpp',
     'source/render.cpp',
     'source/shader_controller.cpp',
