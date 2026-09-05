@@ -16,6 +16,12 @@ namespace cgame::graphics
         std::vector<std::uint8_t> pixels;
     };
 
+    enum class mesh_topology
+    {
+        triangles,
+        lines
+    };
+
     struct primitive_data
     {
         std::vector<glm::vec3> positions;
@@ -23,6 +29,7 @@ namespace cgame::graphics
         std::vector<glm::vec2> texcoords;
         std::vector<std::uint32_t> indices;
         int albedoIndex = -1;
+        mesh_topology topology = mesh_topology::triangles;
     };
 
     struct model_data
@@ -30,7 +37,4 @@ namespace cgame::graphics
         std::vector<image_data> images;
         std::vector<primitive_data> primitives;
     };
-
-    [[nodiscard]]
-    primitive_data makeGridMesh(int slices, float spacing);
 }

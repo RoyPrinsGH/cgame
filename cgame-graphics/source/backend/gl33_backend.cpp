@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <optional>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -6,6 +7,8 @@
 
 #define GRAPHICS_API_OPENGL_33
 #include <rlgl.h>
+
+#include <external/glad.h>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
@@ -30,6 +33,7 @@ namespace cgame::graphics
             unsigned int indexVboId = 0;
             unsigned int albedoTextureId = 0;
             int indexCount = 0;
+            unsigned int drawMode = GL_TRIANGLES;
         };
 
         struct gpu_model
@@ -42,10 +46,20 @@ namespace cgame::graphics
         struct gpu_shader
         {
             unsigned int programId = 0;
-            int viewLocation = -1;
-            int projectionLocation = -1;
-            int albedoLocation = -1;
+            std::optional<int> viewLocation;
+            std::optional<int> projectionLocation;
+            std::optional<int> albedoLocation;
         };
+
+        std::optional<int> uniformLocation(unsigned int programId, const char* name)
+        {
+            const int location = rlGetLocationUniform(programId, name);
+
+            if (location < 0)
+                return std::nullopt;
+
+            return location;
+        }
 
         Matrix toRayMatrix(const glm::mat4& matrix)
         {
@@ -86,11 +100,11 @@ namespace cgame::graphics
                 if (shader.programId == 0)
                     throw std::runtime_error("could not compile shader program");
 
-                shader.viewLocation = rlGetLocationUniform(shader.programId, "matView");
+                shader.viewLocation = uniformLocation(shader.programId, "matView");
                 shader.projectionLocation =
-                    rlGetLocationUniform(shader.programId, "matProjection");
+                    uniformLocation(shader.programId, "matProjection");
                 shader.albedoLocation =
-                    rlGetLocationUniform(shader.programId, "baseColorTexture");
+                    uniformLocation(shader.programId, "baseColorTexture");
 
                 m_shaders.push_back(shader);
 
@@ -102,8 +116,12 @@ namespace cgame::graphics
                 const gpu_shader& shader = shaderAt(handle);
 
                 rlEnableShader(shader.programId);
-                rlSetUniformMatrix(shader.viewLocation, m_view);
-                rlSetUniformMatrix(shader.projectionLocation, m_projection);
+
+                if (shader.viewLocation)
+                    rlSetUniformMatrix(*shader.viewLocation, m_view);
+
+                if (shader.projectionLocation)
+                    rlSetUniformMatrix(*shader.projectionLocation, m_projection);
 
                 m_activeShader = handle;
             }
@@ -150,6 +168,9 @@ namespace cgame::graphics
 
                     gpu_primitive gpuPrimitive;
                     gpuPrimitive.indexCount = static_cast<int>(primitive.indices.size());
+                    gpuPrimitive.drawMode = primitive.topology == mesh_topology::lines
+                                                ? GL_LINES
+                                                : GL_TRIANGLES;
 
                     gpuPrimitive.vaoId = rlLoadVertexArray();
                     rlEnableVertexArray(gpuPrimitive.vaoId);
@@ -234,17 +255,22 @@ namespace cgame::graphics
 
                 for (const gpu_primitive& primitive : model.primitives)
                 {
-                    int textureSlot = 0;
-                    rlActiveTextureSlot(textureSlot);
-                    rlEnableTexture(primitive.albedoTextureId);
-                    rlSetUniform(shader.albedoLocation, &textureSlot,
-                                 RL_SHADER_UNIFORM_INT, 1);
+                    if (shader.albedoLocation)
+                    {
+                        int textureSlot = 0;
+                        rlActiveTextureSlot(textureSlot);
+                        rlEnableTexture(primitive.albedoTextureId);
+                        rlSetUniform(*shader.albedoLocation, &textureSlot,
+                                     RL_SHADER_UNIFORM_INT, 1);
+                    }
 
                     rlEnableVertexArray(primitive.vaoId);
-                    rlDrawVertexArrayElementsInstanced(0, primitive.indexCount, nullptr,
-                                                       instanceCount);
+                    glDrawElementsInstanced(primitive.drawMode, primitive.indexCount,
+                                            GL_UNSIGNED_INT, nullptr, instanceCount);
                     rlDisableVertexArray();
-                    rlDisableTexture();
+
+                    if (shader.albedoLocation)
+                        rlDisableTexture();
                 }
             }
 
