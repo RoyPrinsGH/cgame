@@ -47,7 +47,7 @@ namespace cgame::project
             std::vector<std::string> parts;
             for (const auto& part : relative.parent_path())
                 parts.push_back(part.string());
-            parts.push_back(relative.stem().string());
+            parts.push_back(relative.filename().string());
             return assets::virtual_asset_path{std::move(parts)};
         }
 
