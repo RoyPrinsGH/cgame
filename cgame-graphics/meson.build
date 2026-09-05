@@ -29,6 +29,7 @@ files = [
     'source/gltf_loader.cpp',
     'source/grid.cpp',
     'source/model_controller.cpp',
+    'source/render.cpp',
     'source/shader_controller.cpp',
     'source/backend/gl33_backend.cpp',
 ]
