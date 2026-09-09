@@ -1,7 +1,12 @@
-#include <cgame/assets/asset_info.hpp>
-#include <cgame/assets/asset_loader.hpp>
 #include <cgame/assets/collider_spec.hpp>
 #include <cgame/assets/pak.hpp>
+#include <cgame/graphics/camera.hpp>
+#include <cgame/graphics/default_shaders.hpp>
+#include <cgame/graphics/grid.hpp>
+#include <cgame/graphics/model_controller.hpp>
+#include <cgame/graphics/render.hpp>
+#include <cgame/graphics/render_backend.hpp>
+#include <cgame/graphics/render_snapshot.hpp>
 #include <cgame/physics/physics_controller.hpp>
 #include <cgame/platform/input/button_state_tracker.hpp>
 #include <cgame/platform/input/glfw_input_hook.hpp>
@@ -9,36 +14,29 @@
 #include <cgame/platform/window.hpp>
 
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <filesystem>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/mat4x4.hpp>
 #include <memory>
-#include <rlgl.h>
+#include <span>
 
-#include "camera.hpp"
 #include "events.hpp"
-#include "helpers.hpp"
-#include "renderer.hpp"
 #include "world/gamestate.hpp"
+
+namespace
+{
+    glm::mat4 shipTransform(const world::ship& ship, float scale)
+    {
+        return glm::scale(glm::translate(glm::mat4(1.0f), ship.position) *
+                              glm::mat4_cast(ship.rotation),
+                          glm::vec3(scale));
+    }
+}
 
 int main(void)
 {
     auto* window = cgame::platform::createWindow(1280, 720, "cgame");
-
-    int fb_width;
-    int fb_height;
-
-    glfwGetFramebufferSize(window, &fb_width, &fb_height);
-    rlLoadExtensions((void*)glfwGetProcAddress);
-    rlglInit(fb_width, fb_height);
-    rlViewport(0, 0, fb_width, fb_height);
-    rlEnableDepthTest();
-    rlEnableBackfaceCulling();
-
-    glfwSetFramebufferSizeCallback(window,
-                                   [](GLFWwindow*, int width, int height)
-                                   {
-                                       rlViewport(0, 0, width, height);
-                                       rlSetFramebufferWidth(width);
-                                       rlSetFramebufferHeight(height);
-                                   });
 
     cgame::platform::input::glfw::glfw_raw_input_stream glfwRawInputStream;
     cgame::platform::input::glfw::installGlfwInputHandler(&glfwRawInputStream);
@@ -47,7 +45,7 @@ int main(void)
 
     engine::events::tick_history tickHistory;
 
-    engine::camera camera;
+    cgame::graphics::camera camera;
 
     camera.position = {0.0f, 5.0f, 5.0f};
 
@@ -60,21 +58,43 @@ int main(void)
 
     std::vector<cgame::physics::rigid_body_handle> enemyShipHandles;
 
-    const cgame::assets::virtual_asset_path shipPath({"models", "ships", "baseShip"});
-
     auto executableDir = boost::dll::program_location().parent_path();
     auto pakPath = executableDir / "assets" / "client.cgpak";
 
+    std::filesystem::create_directories(pakPath.parent_path());
+
     cgame::assets::pak_builder pakBuilder;
 
-    pakBuilder.add({{"models", "ships", "baseShip"}},
-                   "/home/rvne/development/cgame/cgame-client/assets/ship.glb");
+    // Dev convenience: pack the client's own assets next to the executable.
+    const auto clientAssetsDir =
+        executableDir / ".." / ".." / "cgame-client" / "assets";
+
+    pakBuilder.add({{"models", "ships", "baseShip"}}, clientAssetsDir / "ship.glb");
 
     pakBuilder.build(pakPath);
 
     cgame::assets::pak pak(pakPath);
 
-    engine::renderer renderer(&pak);
+    auto backend = cgame::graphics::createGl33Backend(
+        [](const char* procName)
+        { return reinterpret_cast<void*>(glfwGetProcAddress(procName)); });
+
+    cgame::graphics::model_controller models(backend.get(), &pak);
+
+    const cgame::graphics::shader_handle defaultShader = backend->loadShader(
+        cgame::graphics::defaultVertexShader, cgame::graphics::defaultFragmentShader);
+
+    const cgame::graphics::shader_handle gridShader = backend->loadShader(
+        cgame::graphics::debugGridVertexShader, cgame::graphics::debugGridFragmentShader);
+
+    const cgame::graphics::model_handle shipModel =
+        models.load({{"models", "ships", "baseShip"}});
+
+    cgame::graphics::primitive_data grid = cgame::graphics::makeGrid(1000, 1.0f);
+    const cgame::graphics::model_handle gridModel =
+        backend->uploadMesh(std::span{&grid, 1}, {});
+
+    bool debugModeEnabled = true;
 
     int clientTick = 0;
     int syncedTick = 0;
@@ -189,7 +209,7 @@ int main(void)
                     if (k->key == cgame::platform::input::raw::special_key::f3)
                     {
                         printf("-- toggled debug mode --\n");
-                        renderer.toggleDebugMode();
+                        debugModeEnabled = !debugModeEnabled;
                     }
                 }
             }
@@ -215,12 +235,35 @@ int main(void)
         }
 
         // -----==[RENDER]==-----
-        renderer.draw(window, gameState, camera);
+        std::vector<glm::mat4> shipInstances;
+        shipInstances.reserve(gameState.m_enemyShips.size() + 1);
+
+        shipInstances.push_back(shipTransform(gameState.m_playerShip, 0.1f));
+
+        for (const auto& ship : gameState.m_enemyShips)
+            shipInstances.push_back(shipTransform(ship, 0.1f));
+
+        std::vector<glm::mat4> gridInstances{glm::mat4(1.0f)};
+
+        cgame::graphics::render_snapshot snapshot;
+        snapshot.camera = camera;
+
+        if (debugModeEnabled)
+            snapshot.entries.push_back({gridShader, gridModel, gridInstances});
+
+        snapshot.entries.push_back({defaultShader, shipModel, shipInstances});
+
+        int fb_width;
+        int fb_height;
+        glfwGetFramebufferSize(window, &fb_width, &fb_height);
+
+        cgame::graphics::render(*backend, snapshot, fb_width, fb_height);
+
+        glfwSwapBuffers(window);
     }
 
     delete physicsController;
 
-    rlglClose();
     glfwDestroyWindow(window);
     glfwTerminate();
 
