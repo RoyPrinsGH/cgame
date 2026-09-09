@@ -80,6 +80,7 @@ namespace cgame::graphics
             {
                 rlLoadExtensions(reinterpret_cast<void*>(getProcAddress));
                 rlglInit(0, 0);
+                rlEnableBackfaceCulling();
             }
 
             ~gl33_backend() override
