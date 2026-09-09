@@ -14,6 +14,7 @@
 #include <glm/matrix.hpp>
 
 #include <cgame/graphics/render_backend.hpp>
+#include <cgame/graphics/shader_contract.hpp>
 
 namespace cgame::graphics
 {
@@ -63,9 +64,11 @@ namespace cgame::graphics
             std::optional<int> albedoLocation;
         };
 
-        std::optional<int> uniformLocation(unsigned int programId, const char* name)
+        std::optional<int> uniformLocation(unsigned int programId,
+                                           std::string_view name)
         {
-            const int location = rlGetLocationUniform(programId, name);
+            const int location =
+                rlGetLocationUniform(programId, std::string(name).c_str());
 
             if (location < 0)
                 return std::nullopt;
@@ -113,11 +116,16 @@ namespace cgame::graphics
                 if (shader.programId == 0)
                     throw std::runtime_error("could not compile shader program");
 
-                shader.viewLocation = uniformLocation(shader.programId, "matView");
-                shader.projectionLocation =
-                    uniformLocation(shader.programId, "matProjection");
+                shader.viewLocation =
+                    uniformLocation(shader.programId, shader_contract::viewUniform);
+                shader.projectionLocation = uniformLocation(
+                    shader.programId, shader_contract::projectionUniform);
                 shader.albedoLocation =
-                    uniformLocation(shader.programId, "baseColorTexture");
+                    uniformLocation(shader.programId, shader_contract::albedoSampler);
+
+                if (!shader.viewLocation || !shader.projectionLocation)
+                    throw std::runtime_error(
+                        "shader missing required uniforms matView/matProjection");
 
                 return allocateShader(std::move(shader));
             }
@@ -215,14 +223,16 @@ namespace cgame::graphics
                         static_cast<int>(vertices.size() * sizeof(vertex)), false);
                     rlEnableVertexBuffer(gpuPrimitive.vertexVboId);
 
-                    rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(vertex), 0);
-                    rlEnableVertexAttribute(0);
-                    rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(vertex),
-                                         3 * sizeof(float));
-                    rlEnableVertexAttribute(2);
-                    rlSetVertexAttribute(1, 2, RL_FLOAT, false, sizeof(vertex),
+                    rlSetVertexAttribute(shader_contract::positionLocation, 3,
+                                         RL_FLOAT, false, sizeof(vertex), 0);
+                    rlEnableVertexAttribute(shader_contract::positionLocation);
+                    rlSetVertexAttribute(shader_contract::normalLocation, 3, RL_FLOAT,
+                                         false, sizeof(vertex), 3 * sizeof(float));
+                    rlEnableVertexAttribute(shader_contract::normalLocation);
+                    rlSetVertexAttribute(shader_contract::texcoordLocation, 2,
+                                         RL_FLOAT, false, sizeof(vertex),
                                          6 * sizeof(float));
-                    rlEnableVertexAttribute(1);
+                    rlEnableVertexAttribute(shader_contract::texcoordLocation);
 
                     gpuPrimitive.indexVboId = rlLoadVertexBufferElement(
                         primitive.indices.data(),
@@ -364,7 +374,8 @@ namespace cgame::graphics
 
                     for (int column = 0; column < 4; ++column)
                     {
-                        const unsigned int location = 9 + column;
+                        const unsigned int location =
+                            shader_contract::instanceTransformLocation + column;
 
                         rlSetVertexAttribute(location, 4, RL_FLOAT, false,
                                              sizeof(glm::mat4),
