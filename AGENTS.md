@@ -57,7 +57,8 @@ successes and failures.
 ## Working on this repo
 
 - Pick up tickets from `kanban/todo/` (lowest number first); move to
-  `kanban/done/` when finished. `kanban/` is gitignored — stage with `git add -f`.
+  `kanban/done/` when finished. `kanban/` is local-only and gitignored —
+  never commit it.
 - Commit in logical steps with prefixes `feat:`, `fix:`, `refactor:`, `docs:`,
   `other:`; agent-authored commits carry `Co-Authored-By:`/`Generated-By:`
   trailers (see `git log`).
