@@ -163,7 +163,7 @@ namespace cgame::graphics
                         const auto& gltfTexture = asset.textures[textureIndex];
 
                         if (gltfTexture.imageIndex)
-                            data.albedoIndex = static_cast<int>(*gltfTexture.imageIndex);
+                            data.albedoIndex = *gltfTexture.imageIndex;
                     }
                 }
 

@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include <glm/vec2.hpp>
@@ -28,7 +30,7 @@ namespace cgame::graphics
         std::vector<glm::vec3> normals;
         std::vector<glm::vec2> texcoords;
         std::vector<std::uint32_t> indices;
-        int albedoIndex = -1;
+        std::optional<std::size_t> albedoIndex;
         mesh_topology topology = mesh_topology::triangles;
     };
 

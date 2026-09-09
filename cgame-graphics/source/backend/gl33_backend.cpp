@@ -232,9 +232,10 @@ namespace cgame::graphics
 
                     rlDisableVertexArray();
 
-                    if (primitive.albedoIndex >= 0 &&
-                        static_cast<std::size_t>(primitive.albedoIndex) < textures.size())
-                        gpuPrimitive.albedoTexture = textures[primitive.albedoIndex];
+                    if (primitive.albedoIndex &&
+                        *primitive.albedoIndex < textures.size())
+                        gpuPrimitive.albedoTexture =
+                            textures[*primitive.albedoIndex];
 
                     model.primitives.push_back(gpuPrimitive);
                 }
