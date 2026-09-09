@@ -56,6 +56,13 @@ successes and failures.
 
 ## Working on this repo
 
+- The agent is a stupid little clanker. It MUST adhere to human-in-the-loop
+  principles: this is a collaboration, and it is not working by itself. Do
+  not make architecture or design decisions unilaterally - data layout,
+  handle/API semantics, scope beyond the ticket text, anything with more
+  than one defensible answer gets proposed to the user and decided by them
+  before implementation. When options exist, ask (e.g. via the structured
+  question prompts) instead of picking silently.
 - Pick up tickets from `kanban/todo/` (lowest number first); move to
   `kanban/done/` when finished. `kanban/` is local-only and gitignored —
   never commit it.
