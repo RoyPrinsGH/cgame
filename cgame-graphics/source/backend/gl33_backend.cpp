@@ -31,7 +31,7 @@ namespace cgame::graphics
             unsigned int vaoId = 0;
             unsigned int vertexVboId = 0;
             unsigned int indexVboId = 0;
-            unsigned int albedoTextureId = 0;
+            texture_handle albedoTexture;
             int indexCount = 0;
             unsigned int drawMode = GL_TRIANGLES;
         };
@@ -39,8 +39,20 @@ namespace cgame::graphics
         struct gpu_model
         {
             std::vector<gpu_primitive> primitives;
-            unsigned int instanceVboId = 0;
-            int instanceCapacity = 0;
+        };
+
+        // Dynamic per-model state: the instance matrix buffer is created and
+        // grown by instance uploads, so unlike the immutable resource slots
+        // this is mutable runtime state, not a loaded resource.
+        struct gpu_instance_stream
+        {
+            unsigned int vboId = 0;
+            int capacity = 0;
+        };
+
+        struct gpu_texture
+        {
+            unsigned int textureId = 0;
         };
 
         struct gpu_shader
@@ -107,9 +119,22 @@ namespace cgame::graphics
                 shader.albedoLocation =
                     uniformLocation(shader.programId, "baseColorTexture");
 
-                m_shaders.push_back(shader);
+                return allocateShader(std::move(shader));
+            }
 
-                return {static_cast<std::uint32_t>(m_shaders.size())};
+            void unloadShader(shader_handle handle) override
+            {
+                const gpu_shader& shader = shaderAt(handle);
+
+                if (m_activeShader == handle)
+                {
+                    rlDisableShader();
+                    m_activeShader = {};
+                }
+
+                rlUnloadShaderProgram(shader.programId);
+
+                freeShader(handle);
             }
 
             void activateShader(shader_handle handle) override
@@ -142,7 +167,16 @@ namespace cgame::graphics
                 if (id == 0)
                     throw std::runtime_error("could not upload texture");
 
-                return {id};
+                return allocateTexture(id);
+            }
+
+            void unloadTexture(texture_handle handle) override
+            {
+                const gpu_texture& texture = textureAt(handle);
+
+                rlUnloadTexture(texture.textureId);
+
+                freeTexture(handle);
             }
 
             model_handle uploadMesh(std::span<const primitive_data> primitives,
@@ -200,29 +234,51 @@ namespace cgame::graphics
 
                     if (primitive.albedoIndex >= 0 &&
                         static_cast<std::size_t>(primitive.albedoIndex) < textures.size())
-                        gpuPrimitive.albedoTextureId =
-                            textures[primitive.albedoIndex].id;
+                        gpuPrimitive.albedoTexture = textures[primitive.albedoIndex];
 
                     model.primitives.push_back(gpuPrimitive);
                 }
 
-                m_models.push_back(std::move(model));
+                return allocateModel(std::move(model));
+            }
 
-                return {static_cast<std::uint32_t>(m_models.size())};
+            void unloadModel(model_handle handle) override
+            {
+                const gpu_model& model = modelAt(handle);
+
+                for (const gpu_primitive& primitive : model.primitives)
+                {
+                    if (primitive.indexVboId != 0)
+                        rlUnloadVertexBuffer(primitive.indexVboId);
+
+                    if (primitive.vertexVboId != 0)
+                        rlUnloadVertexBuffer(primitive.vertexVboId);
+
+                    if (primitive.vaoId != 0)
+                        rlUnloadVertexArray(primitive.vaoId);
+                }
+
+                const gpu_instance_stream& stream = instanceStreamAt(handle);
+
+                if (stream.vboId != 0)
+                    rlUnloadVertexBuffer(stream.vboId);
+
+                freeModel(handle);
             }
 
             void uploadInstances(model_handle handle,
                                  std::span<const glm::mat4> instances) override
             {
-                gpu_model& model = modelAt(handle);
+                const gpu_model& model = modelAt(handle);
+                gpu_instance_stream& stream = instanceStreamAt(handle);
 
                 const int count = static_cast<int>(instances.size());
 
-                if (count > model.instanceCapacity)
-                    growInstanceBuffer(model, count);
+                if (count > stream.capacity)
+                    growInstanceStream(model, stream, count);
 
                 if (count > 0)
-                    rlUpdateVertexBuffer(model.instanceVboId, instances.data(),
+                    rlUpdateVertexBuffer(stream.vboId, instances.data(),
                                          count * static_cast<int>(sizeof(glm::mat4)), 0);
             }
 
@@ -260,9 +316,14 @@ namespace cgame::graphics
                     {
                         int textureSlot = 0;
                         rlActiveTextureSlot(textureSlot);
-                        rlEnableTexture(primitive.albedoTextureId);
-                        rlSetUniform(*shader.albedoLocation, &textureSlot,
-                                     RL_SHADER_UNIFORM_INT, 1);
+
+                        if (primitive.albedoTexture.valid())
+                        {
+                            rlEnableTexture(
+                                textureAt(primitive.albedoTexture).textureId);
+                            rlSetUniform(*shader.albedoLocation, &textureSlot,
+                                         RL_SHADER_UNIFORM_INT, 1);
+                        }
                     }
 
                     rlEnableVertexArray(primitive.vaoId);
@@ -270,7 +331,7 @@ namespace cgame::graphics
                                             GL_UNSIGNED_INT, nullptr, instanceCount);
                     rlDisableVertexArray();
 
-                    if (shader.albedoLocation)
+                    if (shader.albedoLocation && primitive.albedoTexture.valid())
                         rlDisableTexture();
                 }
             }
@@ -281,22 +342,24 @@ namespace cgame::graphics
             }
 
           private:
-            void growInstanceBuffer(gpu_model& model, int count)
+            void growInstanceStream(const gpu_model& model,
+                                    gpu_instance_stream& stream,
+                                    int count)
             {
-                if (model.instanceVboId != 0)
-                    rlUnloadVertexBuffer(model.instanceVboId);
+                if (stream.vboId != 0)
+                    rlUnloadVertexBuffer(stream.vboId);
 
                 const std::vector<glm::mat4> initial(count, glm::mat4(1.0f));
 
-                model.instanceVboId = rlLoadVertexBuffer(
+                stream.vboId = rlLoadVertexBuffer(
                     initial.data(),
                     static_cast<int>(initial.size() * sizeof(glm::mat4)), true);
-                model.instanceCapacity = count;
+                stream.capacity = count;
 
                 for (const gpu_primitive& primitive : model.primitives)
                 {
                     rlEnableVertexArray(primitive.vaoId);
-                    rlEnableVertexBuffer(model.instanceVboId);
+                    rlEnableVertexBuffer(stream.vboId);
 
                     for (int column = 0; column < 4; ++column)
                     {
@@ -313,32 +376,149 @@ namespace cgame::graphics
                 }
             }
 
-            gpu_model& modelAt(model_handle handle)
+            // Slot primitives with free-list reuse. `generation` is bumped when a
+            // slot is released, so a stale handle (old generation) can never
+            // resolve to the resource that later reuses the slot.
+            static std::uint32_t takeSlot(std::vector<std::uint32_t>& generations,
+                                          std::vector<std::uint32_t>& freeIds)
             {
-                if (!handle.valid() || handle.id > m_models.size())
-                    throw std::runtime_error("unknown model handle");
+                if (!freeIds.empty())
+                {
+                    const std::uint32_t id = freeIds.back();
+                    freeIds.pop_back();
+                    return id;
+                }
 
-                return m_models[handle.id - 1];
+                generations.push_back(1);
+                return static_cast<std::uint32_t>(generations.size());
+            }
+
+            static void releaseSlot(std::uint32_t id,
+                                    std::vector<std::uint32_t>& generations,
+                                    std::vector<std::uint32_t>& freeIds)
+            {
+                ++generations[id - 1];
+                freeIds.push_back(id);
+            }
+
+            shader_handle allocateShader(gpu_shader shader)
+            {
+                const std::uint32_t slot = takeSlot(m_shaderGenerations, m_freeShaderIds);
+                const shader_handle handle{slot, m_shaderGenerations[slot - 1]};
+
+                m_shaders.resize(slot);
+                m_shaders[slot - 1] = std::move(shader);
+
+                return handle;
+            }
+
+            void freeShader(shader_handle handle)
+            {
+                m_shaders[handle.id - 1] = {};
+                releaseSlot(handle.id, m_shaderGenerations, m_freeShaderIds);
+            }
+
+            texture_handle allocateTexture(unsigned int textureId)
+            {
+                const std::uint32_t slot =
+                    takeSlot(m_textureGenerations, m_freeTextureIds);
+                const texture_handle handle{slot, m_textureGenerations[slot - 1]};
+
+                m_textures.resize(slot);
+                m_textures[slot - 1] = {textureId};
+
+                return handle;
+            }
+
+            void freeTexture(texture_handle handle)
+            {
+                m_textures[handle.id - 1] = {};
+                releaseSlot(handle.id, m_textureGenerations, m_freeTextureIds);
+            }
+
+            model_handle allocateModel(gpu_model model)
+            {
+                const std::uint32_t slot = takeSlot(m_modelGenerations, m_freeModelIds);
+                const model_handle handle{slot, m_modelGenerations[slot - 1]};
+
+                m_models.resize(slot);
+                m_models[slot - 1] = std::move(model);
+
+                // Instance streams live and die with their model slot.
+                m_instanceStreams.resize(slot);
+                m_instanceStreams[slot - 1] = {};
+
+                return handle;
+            }
+
+            void freeModel(model_handle handle)
+            {
+                m_models[handle.id - 1] = {};
+                m_instanceStreams[handle.id - 1] = {};
+                releaseSlot(handle.id, m_modelGenerations, m_freeModelIds);
+            }
+
+            // Shared lookup for all three resource tables. A handle is only
+            // usable while its generation matches the live slot generation;
+            // anything else throws instead of silently aliasing the resource
+            // that now owns the slot.
+            template <typename Resource>
+            static const Resource& lookup(const std::vector<Resource>& slots,
+                                          const std::vector<std::uint32_t>& generations,
+                                          std::uint32_t id,
+                                          std::uint32_t generation,
+                                          const char* error)
+            {
+                if (id == 0 || id > slots.size() || generations[id - 1] != generation)
+                    throw std::runtime_error(error);
+
+                return slots[id - 1];
             }
 
             const gpu_model& modelAt(model_handle handle) const
             {
-                if (!handle.valid() || handle.id > m_models.size())
-                    throw std::runtime_error("unknown model handle");
-
-                return m_models[handle.id - 1];
+                return lookup(m_models, m_modelGenerations, handle.id,
+                              handle.generation, "unknown model handle");
             }
 
             const gpu_shader& shaderAt(shader_handle handle) const
             {
-                if (!handle.valid() || handle.id > m_shaders.size())
-                    throw std::runtime_error("unknown shader handle");
+                return lookup(m_shaders, m_shaderGenerations, handle.id,
+                              handle.generation, "unknown shader handle");
+            }
 
-                return m_shaders[handle.id - 1];
+            const gpu_texture& textureAt(texture_handle handle) const
+            {
+                return lookup(m_textures, m_textureGenerations, handle.id,
+                              handle.generation, "unknown texture handle");
+            }
+
+            // Instance streams are written to by instance uploads, so unlike
+            // the immutable resource tables above this only has a mutable
+            // accessor; there is nothing const to read here.
+            gpu_instance_stream& instanceStreamAt(model_handle handle)
+            {
+                if (!handle.valid() || handle.id > m_instanceStreams.size() ||
+                    handle.generation != m_modelGenerations[handle.id - 1])
+                    throw std::runtime_error("unknown model handle");
+
+                return m_instanceStreams[handle.id - 1];
             }
 
             std::vector<gpu_model> m_models;
+            std::vector<std::uint32_t> m_modelGenerations;
+            std::vector<std::uint32_t> m_freeModelIds;
+
+            // Parallel to m_models: same slot ids, same generations/free list.
+            std::vector<gpu_instance_stream> m_instanceStreams;
+
+            std::vector<gpu_texture> m_textures;
+            std::vector<std::uint32_t> m_textureGenerations;
+            std::vector<std::uint32_t> m_freeTextureIds;
+
             std::vector<gpu_shader> m_shaders;
+            std::vector<std::uint32_t> m_shaderGenerations;
+            std::vector<std::uint32_t> m_freeShaderIds;
 
             shader_handle m_activeShader;
 

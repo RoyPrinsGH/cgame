@@ -23,13 +23,19 @@ namespace cgame::graphics
         virtual shader_handle loadShader(std::string_view vertexSource,
                                          std::string_view fragmentSource) = 0;
 
+        virtual void unloadShader(shader_handle shader) = 0;
+
         virtual void activateShader(shader_handle shader) = 0;
         virtual void deactivateShader() = 0;
 
         virtual texture_handle uploadTexture(const image_data& image) = 0;
 
+        virtual void unloadTexture(texture_handle texture) = 0;
+
         virtual model_handle uploadMesh(std::span<const primitive_data> primitives,
                                         std::span<const texture_handle> textures) = 0;
+
+        virtual void unloadModel(model_handle model) = 0;
 
         virtual void uploadInstances(model_handle model,
                                      std::span<const glm::mat4> instances) = 0;

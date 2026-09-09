@@ -36,6 +36,29 @@ namespace cgame::graphics
         return handle;
     }
 
+    void shader_controller::unload(const assets::virtual_asset_path& vertexPath,
+                                   const assets::virtual_asset_path& fragmentPath)
+    {
+        const std::string key = keyOf(vertexPath, fragmentPath);
+
+        const auto found = m_loaded.find(key);
+
+        if (found == m_loaded.end())
+            return;
+
+        m_backend->unloadShader(found->second);
+
+        m_loaded.erase(found);
+    }
+
+    void shader_controller::unloadAll()
+    {
+        for (const auto& [key, handle] : m_loaded)
+            m_backend->unloadShader(handle);
+
+        m_loaded.clear();
+    }
+
     std::string shader_controller::keyOf(const assets::virtual_asset_path& vertexPath,
                                          const assets::virtual_asset_path& fragmentPath)
     {

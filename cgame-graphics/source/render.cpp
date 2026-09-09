@@ -35,7 +35,7 @@ namespace cgame::graphics
 
             backend.uploadInstances(entry.model, entry.instances);
 
-            if (entry.shader.id != activeShader.id)
+            if (entry.shader != activeShader)
             {
                 backend.activateShader(entry.shader);
                 activeShader = entry.shader;

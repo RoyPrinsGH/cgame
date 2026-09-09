@@ -18,6 +18,14 @@ namespace cgame::graphics
         shader_handle load(const assets::virtual_asset_path& vertexPath,
                            const assets::virtual_asset_path& fragmentPath);
 
+        // Evicts the compiled program. Using a handle returned by a former
+        // load() afterwards throws in the backend (generation counter), it does
+        // not alias a newer resource.
+        void unload(const assets::virtual_asset_path& vertexPath,
+                    const assets::virtual_asset_path& fragmentPath);
+
+        void unloadAll();
+
       private:
         static std::string keyOf(const assets::virtual_asset_path& vertexPath,
                                  const assets::virtual_asset_path& fragmentPath);
