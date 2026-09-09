@@ -11,3 +11,4 @@ build-windows
 kanban
 .cache
 compile_commands.json
+pi-sandbox
