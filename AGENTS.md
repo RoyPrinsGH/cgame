@@ -69,5 +69,8 @@ successes and failures.
 - Commit in logical steps with prefixes `feat:`, `fix:`, `refactor:`, `docs:`,
   `other:`; agent-authored commits carry `Co-Authored-By:`/`Generated-By:`
   trailers (see `git log`).
+- Never commit without asking the user first — committing is a human review
+  gate. Stage nothing, run nothing irreversible; present the change and wait
+  for explicit approval.
 - Client-side code is glue only (input, tick loop, snapshots); rendering
   behaviour belongs in `cgame-graphics`.
