@@ -22,6 +22,22 @@ namespace cgame::assets
             return {m_pathParts.begin(), m_pathParts.size()};
         }
 
+        [[nodiscard]]
+        std::string flattened() const
+        {
+            std::string result;
+
+            for (const std::string& part : m_pathParts)
+            {
+                if (!result.empty())
+                    result += '/';
+
+                result += part;
+            }
+
+            return result;
+        }
+
       private:
         std::vector<std::string> m_pathParts;
     };

@@ -27,9 +27,6 @@ namespace cgame::graphics
         void unloadAll();
 
       private:
-        static std::string keyOf(const assets::virtual_asset_path& vertexPath,
-                                 const assets::virtual_asset_path& fragmentPath);
-
         render_backend* m_backend = nullptr;
         assets::pak* m_pak = nullptr;
 

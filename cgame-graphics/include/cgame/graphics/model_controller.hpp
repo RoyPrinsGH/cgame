@@ -32,8 +32,6 @@ namespace cgame::graphics
             std::vector<texture_handle> textures;
         };
 
-        static std::string keyOf(const assets::virtual_asset_path& path);
-
         render_backend* m_backend = nullptr;
         assets::pak* m_pak = nullptr;
 

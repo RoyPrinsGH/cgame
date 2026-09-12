@@ -14,7 +14,7 @@ namespace cgame::graphics
 
     model_handle model_controller::load(const assets::virtual_asset_path& path)
     {
-        const std::string key = keyOf(path);
+        const std::string key = path.flattened();
 
         if (const auto found = m_loaded.find(key); found != m_loaded.end())
             return found->second.model;
@@ -36,7 +36,7 @@ namespace cgame::graphics
 
     void model_controller::unload(const assets::virtual_asset_path& path)
     {
-        const std::string key = keyOf(path);
+        const std::string key = path.flattened();
 
         const auto found = m_loaded.find(key);
 
@@ -62,18 +62,5 @@ namespace cgame::graphics
         }
 
         m_loaded.clear();
-    }
-
-    std::string model_controller::keyOf(const assets::virtual_asset_path& path)
-    {
-        std::string key;
-
-        for (const std::string& part : path.pathParts())
-        {
-            key += part;
-            key += '/';
-        }
-
-        return key;
     }
 }
