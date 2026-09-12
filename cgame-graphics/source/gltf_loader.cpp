@@ -1,7 +1,8 @@
 #include <cstdint>
-#include <stdexcept>
 #include <utility>
 #include <variant>
+
+#include <cgame/graphics/errors.hpp>
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
@@ -57,7 +58,7 @@ namespace cgame::graphics
                 image.data);
 
             if (!pixels)
-                throw std::runtime_error(stbi_failure_reason());
+                throw asset_error(stbi_failure_reason());
 
             image_data decoded;
             decoded.width = width;
@@ -79,13 +80,13 @@ namespace cgame::graphics
         auto file = fastgltf::GltfDataBuffer::FromBytes(bytes.data(), bytes.size());
 
         if (!file)
-            throw std::runtime_error("could not open glb");
+            throw asset_error("could not open glb");
 
         auto loaded =
             parser.loadGltf(file.get(), {}, fastgltf::Options::GenerateMeshIndices);
 
         if (loaded.error() != fastgltf::Error::None)
-            throw std::runtime_error("could not parse glb");
+            throw asset_error("could not parse glb");
 
         fastgltf::Asset asset = std::move(loaded.get());
 
@@ -98,7 +99,7 @@ namespace cgame::graphics
         }
 
         if (asset.meshes.empty())
-            throw std::runtime_error("glb contains no meshes");
+            throw asset_error("glb contains no meshes");
 
         for (const auto& mesh : asset.meshes)
         {
@@ -106,7 +107,7 @@ namespace cgame::graphics
             {
                 auto pos_it = primitive.findAttribute("POSITION");
                 if (pos_it == primitive.attributes.end())
-                    throw std::runtime_error("mesh has no POSITION");
+                    throw asset_error("mesh has no POSITION");
 
                 const auto& pos_accessor = asset.accessors[pos_it->accessorIndex];
                 std::vector<fastgltf::math::fvec3> positions(pos_accessor.count);

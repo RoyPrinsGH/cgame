@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <optional>
 #include <cstring>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -13,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/matrix.hpp>
 
+#include <cgame/graphics/errors.hpp>
 #include <cgame/graphics/render_backend.hpp>
 #include <cgame/graphics/shader_contract.hpp>
 
@@ -114,7 +114,7 @@ namespace cgame::graphics
                     rlLoadShaderProgram(vertex.c_str(), fragment.c_str());
 
                 if (shader.programId == 0)
-                    throw std::runtime_error("could not compile shader program");
+                    throw shader_compile_error("could not compile shader program");
 
                 shader.viewLocation =
                     uniformLocation(shader.programId, shader_contract::viewUniform);
@@ -124,7 +124,7 @@ namespace cgame::graphics
                     uniformLocation(shader.programId, shader_contract::albedoSampler);
 
                 if (!shader.viewLocation || !shader.projectionLocation)
-                    throw std::runtime_error(
+                    throw shader_compile_error(
                         "shader missing required uniforms matView/matProjection");
 
                 return allocateShader(std::move(shader));
@@ -173,7 +173,7 @@ namespace cgame::graphics
                                   RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
 
                 if (id == 0)
-                    throw std::runtime_error("could not upload texture");
+                    throw texture_upload_error("could not upload texture");
 
                 return allocateTexture(id);
             }
@@ -482,7 +482,7 @@ namespace cgame::graphics
                                           const char* error)
             {
                 if (id == 0 || id > slots.size() || generations[id - 1] != generation)
-                    throw std::runtime_error(error);
+                    throw bad_handle_error(error);
 
                 return slots[id - 1];
             }
@@ -512,7 +512,7 @@ namespace cgame::graphics
             {
                 if (!handle.valid() || handle.id > m_instanceStreams.size() ||
                     handle.generation != m_modelGenerations[handle.id - 1])
-                    throw std::runtime_error("unknown model handle");
+                    throw bad_handle_error("unknown model handle");
 
                 return m_instanceStreams[handle.id - 1];
             }

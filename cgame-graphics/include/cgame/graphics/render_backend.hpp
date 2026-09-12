@@ -15,6 +15,13 @@ namespace cgame::graphics
 {
     using gl_proc_loader = void* (*)(const char* procName);
 
+    // Error contract for implementations:
+    //
+    //   - misuse of a handle (id 0, out of range, stale generation) throws
+    //     bad_handle_error — that is a programming error, not bad data
+    //   - bad or unsupported data (shader sources, images, meshes) throws a
+    //     graphics_error subtype (shader_compile_error, texture_upload_error,
+    //     asset_error); these are recoverable, see errors.hpp
     class render_backend
     {
       public:
