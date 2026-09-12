@@ -5,8 +5,5 @@
 
 namespace cgame::graphics
 {
-    void render(render_backend& backend,
-                const render_snapshot& snapshot,
-                int fbWidth,
-                int fbHeight);
+    void render(render_backend& backend, const render_snapshot& snapshot);
 }

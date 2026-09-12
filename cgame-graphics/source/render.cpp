@@ -6,11 +6,11 @@
 
 namespace cgame::graphics
 {
-    void render(render_backend& backend,
-                const render_snapshot& snapshot,
-                int fbWidth,
-                int fbHeight)
+    void render(render_backend& backend, const render_snapshot& snapshot)
     {
+        const int fbWidth = snapshot.framebufferWidth;
+        const int fbHeight = snapshot.framebufferHeight;
+
         if (fbWidth < 1 || fbHeight < 1)
             return;
 

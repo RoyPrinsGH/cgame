@@ -245,19 +245,21 @@ int main(void)
 
         std::vector<glm::mat4> gridInstances{glm::mat4(1.0f)};
 
+        int fb_width;
+        int fb_height;
+        glfwGetFramebufferSize(window, &fb_width, &fb_height);
+
         cgame::graphics::render_snapshot snapshot;
         snapshot.camera = camera;
+        snapshot.framebufferWidth = fb_width;
+        snapshot.framebufferHeight = fb_height;
 
         if (debugModeEnabled)
             snapshot.entries.push_back({gridShader, gridModel, gridInstances});
 
         snapshot.entries.push_back({defaultShader, shipModel, shipInstances});
 
-        int fb_width;
-        int fb_height;
-        glfwGetFramebufferSize(window, &fb_width, &fb_height);
-
-        cgame::graphics::render(*backend, snapshot, fb_width, fb_height);
+        cgame::graphics::render(*backend, snapshot);
 
         glfwSwapBuffers(window);
     }

@@ -21,6 +21,13 @@ namespace cgame::graphics
     struct render_snapshot
     {
         graphics::camera camera;
+
+        // Framebuffer dimensions of the target for this frame; render() uses
+        // them for the projection aspect ratio and hands them to the
+        // backend's beginFrame() for the viewport.
+        int framebufferWidth = 0;
+        int framebufferHeight = 0;
+
         std::vector<render_entry> entries;
     };
 }
