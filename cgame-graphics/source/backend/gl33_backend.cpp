@@ -306,7 +306,8 @@ namespace cgame::graphics
             void beginFrame(const glm::mat4& view,
                             const glm::mat4& projection,
                             int fbWidth,
-                            int fbHeight) override
+                            int fbHeight,
+                            const rgba8& clearColour) override
             {
                 m_view = toRayMatrix(view);
                 m_projection = toRayMatrix(projection);
@@ -315,7 +316,7 @@ namespace cgame::graphics
                 rlSetFramebufferHeight(fbHeight);
                 rlViewport(0, 0, fbWidth, fbHeight);
 
-                rlClearColor(20, 20, 20, 255);
+                rlClearColor(clearColour.r, clearColour.g, clearColour.b, clearColour.a);
                 rlClearScreenBuffers();
 
                 rlSetMatrixProjection(m_projection);

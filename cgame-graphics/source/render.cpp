@@ -24,7 +24,8 @@ namespace cgame::graphics
 
         const glm::mat4 view = glm::lookAt(camera.position, camera.target, camera.up);
 
-        backend.beginFrame(view, projection, fbWidth, fbHeight);
+        backend.beginFrame(
+            view, projection, fbWidth, fbHeight, snapshot.clearColour);
 
         shader_handle activeShader;
 

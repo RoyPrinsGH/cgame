@@ -6,6 +6,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <cgame/graphics/colour.hpp>
 #include <cgame/graphics/mesh.hpp>
 #include <cgame/graphics/model.hpp>
 #include <cgame/graphics/shader.hpp>
@@ -50,7 +51,8 @@ namespace cgame::graphics
         virtual void beginFrame(const glm::mat4& view,
                                 const glm::mat4& projection,
                                 int fbWidth,
-                                int fbHeight) = 0;
+                                int fbHeight,
+                                const rgba8& clearColour) = 0;
 
         virtual void draw(model_handle model, int instanceCount) = 0;
 
