@@ -71,6 +71,8 @@ successes and failures.
   trailers (see `git log`).
 - Never commit without asking the user first — committing is a human review
   gate. Stage nothing, run nothing irreversible; present the change and wait
-  for explicit approval.
+  for explicit approval. Approval of a *plan* (e.g. a "screenshot then commit"
+  option) is not approval of the *commit*: show the final diff and message and
+  get a yes after they are final, before running `git commit`.
 - Client-side code is glue only (input, tick loop, snapshots); rendering
   behaviour belongs in `cgame-graphics`.
