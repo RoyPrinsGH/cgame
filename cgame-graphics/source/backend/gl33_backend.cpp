@@ -96,10 +96,20 @@ namespace cgame::graphics
                 rlLoadExtensions(reinterpret_cast<void*>(getProcAddress));
                 rlglInit(0, 0);
                 rlEnableBackfaceCulling();
+
+                // Bound in place of a texture whose handle went stale at
+                // draw time, so a dangling reference in a loaded model
+                // degrades visibly instead of killing the render.
+                const std::uint8_t placeholderPixel[4] = {255, 0, 255, 255};
+                m_placeholderTextureId = rlLoadTexture(
+                    placeholderPixel, 1, 1, RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
             }
 
             ~gl33_backend() override
             {
+                if (m_placeholderTextureId != 0)
+                    rlUnloadTexture(m_placeholderTextureId);
+
                 rlglClose();
             }
 
@@ -323,6 +333,13 @@ namespace cgame::graphics
 
                 for (const gpu_primitive& primitive : model.primitives)
                 {
+                    // An albedo handle that went stale (texture unloaded,
+                    // slot reused) degrades to the magenta placeholder
+                    // instead of throwing - a dangling reference inside a
+                    // loaded model is bad data, not API misuse. Everything
+                    // else here still throws via the lookups above.
+                    bool albedoBound = false;
+
                     if (shader.albedoLocation)
                     {
                         int textureSlot = 0;
@@ -330,10 +347,17 @@ namespace cgame::graphics
 
                         if (primitive.albedoTexture.valid())
                         {
-                            rlEnableTexture(
-                                textureAt(primitive.albedoTexture).textureId);
+                            unsigned int textureId = m_placeholderTextureId;
+
+                            if (textureAlive(primitive.albedoTexture))
+                                textureId =
+                                    textureAt(primitive.albedoTexture).textureId;
+
+                            rlEnableTexture(textureId);
                             rlSetUniform(*shader.albedoLocation, &textureSlot,
                                          RL_SHADER_UNIFORM_INT, 1);
+
+                            albedoBound = true;
                         }
                     }
 
@@ -342,7 +366,7 @@ namespace cgame::graphics
                                             GL_UNSIGNED_INT, nullptr, instanceCount);
                     rlDisableVertexArray();
 
-                    if (shader.albedoLocation && primitive.albedoTexture.valid())
+                    if (albedoBound)
                         rlDisableTexture();
                 }
             }
@@ -505,6 +529,14 @@ namespace cgame::graphics
                               handle.generation, "unknown texture handle");
             }
 
+            // Non-throwing liveness check, used at draw time to degrade a
+            // stale albedo reference instead of throwing from inside a frame.
+            bool textureAlive(texture_handle handle) const
+            {
+                return handle.valid() && handle.id <= m_textures.size() &&
+                       m_textureGenerations[handle.id - 1] == handle.generation;
+            }
+
             // Instance streams are written to by instance uploads, so unlike
             // the immutable resource tables above this only has a mutable
             // accessor; there is nothing const to read here.
@@ -533,6 +565,9 @@ namespace cgame::graphics
             std::vector<std::uint32_t> m_freeShaderIds;
 
             shader_handle m_activeShader;
+
+            // 1×1 magenta, bound for stale albedo handles at draw time.
+            unsigned int m_placeholderTextureId = 0;
 
             Matrix m_view = toRayMatrix(glm::mat4(1.0f));
             Matrix m_projection = toRayMatrix(glm::mat4(1.0f));
