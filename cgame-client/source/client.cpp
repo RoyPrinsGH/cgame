@@ -243,8 +243,6 @@ int main(void)
         for (const auto& ship : gameState.m_enemyShips)
             shipInstances.push_back(shipTransform(ship, 0.1f));
 
-        std::vector<glm::mat4> gridInstances{glm::mat4(1.0f)};
-
         int fb_width;
         int fb_height;
         glfwGetFramebufferSize(window, &fb_width, &fb_height);
@@ -255,7 +253,8 @@ int main(void)
         snapshot.framebufferHeight = fb_height;
 
         if (debugModeEnabled)
-            snapshot.entries.push_back({gridShader, gridModel, gridInstances});
+            snapshot.entries.push_back(
+                {gridShader, gridModel, glm::mat4(1.0f)});
 
         snapshot.entries.push_back({defaultShader, shipModel, shipInstances});
 

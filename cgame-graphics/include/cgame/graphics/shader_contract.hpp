@@ -12,14 +12,18 @@ namespace cgame::graphics::shader_contract
     //   - matView, matProjection (both mat4)
     //
     // Optional (stays at its default when not declared, so minimal shaders
-    // like the debug grid can omit them):
+    // can omit them):
     //   - baseColorTexture (sampler2D, bound to texture slot 0)
+    //   - matModelTransform (mat4, default identity) — set per draw for non-instanced
+    //     single draws; instanced shaders instead read the instance transform
+    //     attribute below and should not declare matModelTransform
     //
     // Vertex attributes: 0 position (vec3), 1 texcoord (vec2),
     // 2 normal (vec3), 9-12 instance transform (mat4, one column each).
 
     inline constexpr std::string_view viewUniform = "matView";
     inline constexpr std::string_view projectionUniform = "matProjection";
+    inline constexpr std::string_view modelTransformUniform = "matModelTransform";
     inline constexpr std::string_view albedoSampler = "baseColorTexture";
 
     inline constexpr unsigned int positionLocation = 0;

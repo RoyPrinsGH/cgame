@@ -54,7 +54,15 @@ namespace cgame::graphics
                                 int fbHeight,
                                 const rgba8& clearColour) = 0;
 
+        // Instanced draw; the instance data must have been uploaded with
+        // uploadInstances() beforehand.
         virtual void draw(model_handle model, int instanceCount) = 0;
+
+        // Non-instanced single draw; the model transform reaches the shader
+        // through the optional matModelTransform uniform (shader contract). No
+        // instance stream is touched.
+        virtual void draw(model_handle model,
+                          const glm::mat4& modelTransform) = 0;
 
         virtual void endFrame() = 0;
     };

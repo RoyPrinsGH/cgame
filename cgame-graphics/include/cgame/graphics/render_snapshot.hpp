@@ -1,6 +1,7 @@
 #pragma once
 
 #include <span>
+#include <variant>
 #include <vector>
 
 #include <glm/mat4x4.hpp>
@@ -16,7 +17,10 @@ namespace cgame::graphics
     {
         shader_handle shader;
         model_handle model;
-        std::span<const glm::mat4> instances;
+
+        // One transform -> non-instanced draw through the matModelTransform uniform;
+        // a span of transforms -> instanced draw through the instance stream.
+        std::variant<std::span<const glm::mat4>, glm::mat4> transform;
     };
 
     struct render_snapshot

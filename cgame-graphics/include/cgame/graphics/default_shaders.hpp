@@ -9,7 +9,8 @@ namespace cgame::graphics
     //
     // They follow the shader contract documented in shader_contract.hpp:
     // uniform/attribute names and locations come from there. The debug grid
-    // shader omits the optional texture and normal inputs.
+    // shader omits the optional texture input and draws non-instanced via
+    // the matModelTransform uniform.
 
     inline constexpr std::string_view defaultVertexShader = R"(
 #version 330 core
@@ -53,14 +54,13 @@ void main()
 
 layout(location = 0) in vec3 vertexPosition;
 
-layout(location = 9) in mat4 instanceTransform;
-
 uniform mat4 matView;
 uniform mat4 matProjection;
+uniform mat4 matModelTransform;
 
 void main()
 {
-    vec4 worldPosition = instanceTransform * vec4(vertexPosition, 1.0);
+    vec4 worldPosition = matModelTransform * vec4(vertexPosition, 1.0);
     gl_Position = matProjection * matView * worldPosition;
 }
 )";

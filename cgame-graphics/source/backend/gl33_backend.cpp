@@ -51,6 +51,12 @@ namespace cgame::graphics
             int capacity = 0;
         };
 
+        // Instance streams grow geometrically and shrink with hysteresis, so
+        // varying instance counts neither churn reallocations every frame
+        // nor pin a past peak's worth of VRAM forever.
+        constexpr int instanceStreamGrowthFactor = 2;
+        constexpr int instanceStreamShrinkDivisor = 4;
+
         struct gpu_texture
         {
             unsigned int textureId = 0;
@@ -61,6 +67,7 @@ namespace cgame::graphics
             unsigned int programId = 0;
             std::optional<int> viewLocation;
             std::optional<int> projectionLocation;
+            std::optional<int> modelLocation;
             std::optional<int> albedoLocation;
         };
 
@@ -130,6 +137,8 @@ namespace cgame::graphics
                     uniformLocation(shader.programId, shader_contract::viewUniform);
                 shader.projectionLocation = uniformLocation(
                     shader.programId, shader_contract::projectionUniform);
+                shader.modelLocation =
+                    uniformLocation(shader.programId, shader_contract::modelTransformUniform);
                 shader.albedoLocation =
                     uniformLocation(shader.programId, shader_contract::albedoSampler);
 
@@ -296,7 +305,18 @@ namespace cgame::graphics
                 const int count = static_cast<int>(instances.size());
 
                 if (count > stream.capacity)
+                {
+                    const int grown = stream.capacity *
+                                      instanceStreamGrowthFactor;
+
+                    growInstanceStream(
+                        model, stream, std::max(count, grown));
+                }
+                else if (count > 0 &&
+                         count <= stream.capacity / instanceStreamShrinkDivisor)
+                {
                     growInstanceStream(model, stream, count);
+                }
 
                 if (count > 0)
                     rlUpdateVertexBuffer(stream.vboId, instances.data(),
@@ -329,8 +349,35 @@ namespace cgame::graphics
                 if (instanceCount <= 0)
                     return;
 
-                const gpu_model& model = modelAt(handle);
-                const gpu_shader& shader = shaderAt(m_activeShader);
+                drawPrimitives(modelAt(handle), shaderAt(m_activeShader),
+                               instanceCount, {});
+            }
+
+            void draw(model_handle handle,
+                      const glm::mat4& modelTransform) override
+            {
+                drawPrimitives(modelAt(handle), shaderAt(m_activeShader), 0,
+                               &modelTransform);
+            }
+
+            void endFrame() override
+            {
+                rlDrawRenderBatchActive();
+            }
+
+          private:
+            // Shared per-primitive loop for both draw flavours. instanceCount
+            // > 0 draws instanced from the model's instance stream;
+            // modelTransform (single-draw path) is fed to the shader through
+            // the optional matModelTransform uniform and drawn non-instanced.
+            void drawPrimitives(const gpu_model& model,
+                                const gpu_shader& shader,
+                                int instanceCount,
+                                const glm::mat4* modelTransform)
+            {
+                if (modelTransform && shader.modelLocation)
+                    rlSetUniformMatrix(*shader.modelLocation,
+                                       toRayMatrix(*modelTransform));
 
                 for (const gpu_primitive& primitive : model.primitives)
                 {
@@ -363,8 +410,16 @@ namespace cgame::graphics
                     }
 
                     rlEnableVertexArray(primitive.vaoId);
-                    glDrawElementsInstanced(primitive.drawMode, primitive.indexCount,
-                                            GL_UNSIGNED_INT, nullptr, instanceCount);
+
+                    if (instanceCount > 0)
+                        glDrawElementsInstanced(primitive.drawMode,
+                                                primitive.indexCount,
+                                                GL_UNSIGNED_INT, nullptr,
+                                                instanceCount);
+                    else
+                        glDrawElements(primitive.drawMode, primitive.indexCount,
+                                       GL_UNSIGNED_INT, nullptr);
+
                     rlDisableVertexArray();
 
                     if (albedoBound)
@@ -372,12 +427,6 @@ namespace cgame::graphics
                 }
             }
 
-            void endFrame() override
-            {
-                rlDrawRenderBatchActive();
-            }
-
-          private:
             void growInstanceStream(const gpu_model& model,
                                     gpu_instance_stream& stream,
                                     int count)
